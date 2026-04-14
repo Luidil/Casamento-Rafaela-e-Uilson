@@ -75,7 +75,7 @@ BEGIN
     INSERT INTO Configuracoes (Chave, Valor, Descricao) VALUES
     ('NomeNoivo', 'Uilson', 'Nome do noivo'),
     ('NomeNoiva', 'Rafaela', 'Nome da noiva'),
-    ('DataCasamento', '2026-06-15', 'Data do casamento'),
+    ('DataCasamento', '2026-09-01', 'Data do casamento'),
     ('HoraCerimonia', '16:00', 'Horário da cerimônia'),
     ('HoraRecepcao', '18:00', 'Horário da recepção'),
     ('LocalCerimonia', 'Igreja Nossa Senhora das Graças', 'Nome do local da cerimônia'),
