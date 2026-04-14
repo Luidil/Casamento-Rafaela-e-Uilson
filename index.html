@@ -1,0 +1,214 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Casamento - Nome dos Noivos</title>
+    <link rel="stylesheet" href="styles.css">
+    <link rel="preconnect" href="https://fonts.googleapis.com">
+    <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600&family=Montserrat:wght@300;400;500&display=swap" rel="stylesheet">
+</head>
+<body>
+    <!-- Hero Section -->
+    <header class="hero" id="home">
+        <div class="hero-content">
+            <p class="save-the-date">Save the Date</p>
+            <h1 class="couple-names">Uilson & Rafaela</h1>
+            <p class="wedding-date">15 de Junho de 2026</p>
+        </div>
+    </header>
+
+    <!-- Navigation -->
+    <nav class="navbar">
+        <ul class="nav-links">
+            <li><a href="#home">Home</a></li>
+            <li><a href="#local">Local</a></li>
+            <li><a href="#confirmacao">Confirmar Presença</a></li>
+            <li><a href="#dresscode">Dress Code</a></li>
+            <li><a href="#fotos">Fotos</a></li>
+        </ul>
+    </nav>
+
+    <!-- Local Section -->
+    <section class="section" id="local">
+        <div class="container">
+            <h2 class="section-title">Local da Cerimônia</h2>
+            <div class="local-info">
+                <div class="local-card">
+                    <h3>Cerimônia & Recepção</h3>
+                    <p class="local-name">Restaurante Donana</p>
+                    <p class="local-address">Av. Praia de Itapuã, Qd 04 - Lote 06</p>
+                    <p class="local-city">Vilas do Atlântico, Lauro de Freitas - BA</p>
+                    <p class="local-time">CEP: 42700-000</p>
+                </div>
+            </div>
+            <div class="map-container">
+                <iframe 
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3775.6!2d-38.3!3d-12.9!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x7164e1e4a1c1c4d%3A0x0!2sAv.%20Praia%20de%20Itapu%C3%A3%2C%20Vilas%20do%20Atl%C3%A2ntico%2C%20Lauro%20de%20Freitas%20-%20BA!5e0!3m2!1spt-BR!2sbr!4v1620000000000!5m2!1spt-BR!2sbr" 
+                    width="100%" 
+                    height="400" 
+                    style="border:0;" 
+                    allowfullscreen="" 
+                    loading="lazy">
+                </iframe>
+            </div>
+            <a href="https://www.google.com/maps" target="_blank" class="btn btn-outline">Abrir no Google Maps</a>
+        </div>
+    </section>
+
+    <!-- Confirmação de Presença -->
+    <section class="section" id="confirmacao">
+        <div class="container">
+            <h2 class="section-title">Confirme Sua Presença</h2>
+            <p class="section-subtitle">Sua presença é muito importante para nós!</p>
+            
+            <form class="rsvp-form" id="rsvpForm">
+                <div class="form-group">
+                    <label for="nome">Nome Completo</label>
+                    <input type="text" id="nome" name="nome" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="email">E-mail</label>
+                    <input type="email" id="email" name="email" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="telefone">Telefone</label>
+                    <input type="tel" id="telefone" name="telefone" required>
+                </div>
+                
+                <div class="form-group">
+                    <label for="acompanhantes">Número de Acompanhantes</label>
+                    <select id="acompanhantes" name="acompanhantes">
+                        <option value="0">0</option>
+                        <option value="1">1</option>
+                        <option value="2">2</option>
+                        <option value="3">3</option>
+                        <option value="4">4</option>
+                    </select>
+                </div>
+                
+                <div class="form-group">
+                    <label>Você estará presente?</label>
+                    <div class="radio-group">
+                        <label class="radio-label">
+                            <input type="radio" name="presenca" value="sim" required>
+                            <span class="radio-custom"></span>
+                            Sim, estarei presente!
+                        </label>
+                        <label class="radio-label">
+                            <input type="radio" name="presenca" value="nao">
+                            <span class="radio-custom"></span>
+                            Não poderei comparecer
+                        </label>
+                    </div>
+                </div>
+                
+                <div class="form-group">
+                    <label for="mensagem">Mensagem para os noivos (opcional)</label>
+                    <textarea id="mensagem" name="mensagem" rows="4"></textarea>
+                </div>
+                
+                <button type="submit" class="btn btn-primary">Confirmar Presença</button>
+            </form>
+            
+            <div class="rsvp-status" id="rsvpStatus" style="display: none;">
+                <div class="success-message">
+                    <span class="checkmark">✓</span>
+                    <h3>Obrigado!</h3>
+                    <p>Sua confirmação foi enviada com sucesso.</p>
+                </div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Dress Code Section -->
+    <section class="section" id="dresscode">
+        <div class="container">
+            <h2 class="section-title">Dress Code</h2>
+            <p class="section-subtitle">Recomendamos a adoção desta paleta de cores, cuidadosamente selecionada para transmitir harmonia, elegância e equilíbrio visual:</p>
+            
+            <div class="dresscode-container">
+                <div class="dresscode-card">
+                    <div class="dresscode-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 2C13.1 2 14 2.9 14 4C14 4.74 13.6 5.39 13 5.73V7H14C15.1 7 16 7.9 16 9V12.78C17.31 13.47 18.18 14.83 18.18 16.5C18.18 18.83 16.34 20.68 14 20.68C11.66 20.68 9.82 18.83 9.82 16.5C9.82 14.83 10.69 13.47 12 12.78V9C12 7.9 12.9 7 14 7H13V5.73C12.4 5.39 12 4.74 12 4C12 2.9 11.1 2 10 2C8.9 2 8 2.9 8 4C8 4.74 8.4 5.39 9 5.73V7H8C6.9 7 6 7.9 6 9V12.78C4.69 13.47 3.82 14.83 3.82 16.5C3.82 18.83 5.66 20.68 8 20.68C10.34 20.68 12.18 18.83 12.18 16.5C12.18 14.83 11.31 13.47 10 12.78V9C10 7.9 10.9 7 12 7H13V5.73C13.6 5.39 14 4.74 14 4C14 2.9 13.1 2 12 2Z"/>
+                        </svg>
+                    </div>
+                    <h3>Homens</h3>
+                    <p class="dresscode-description">Traje Social completo (terno e gravata)</p>
+                    <div class="color-suggestions">
+                        <span class="color-dot" style="background-color: #3E5C58;"></span>
+                        <span class="color-dot" style="background-color: #786B59;"></span>
+                        <span class="color-dot" style="background-color: #1a1a1a;"></span>
+                        <span class="color-dot" style="background-color: #2c3e50;"></span>
+                    </div>
+                </div>
+                
+                <div class="dresscode-card">
+                    <div class="dresscode-icon">
+                        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                            <path d="M12 3C13.1 3 14 3.9 14 5C14 5.74 13.6 6.39 13 6.73V8H14C15.1 8 16 8.9 16 10V13.78C17.31 14.47 18.18 15.83 18.18 17.5C18.18 19.83 16.34 21.68 14 21.68C11.66 21.68 9.82 19.83 9.82 17.5C9.82 15.83 10.69 14.47 12 13.78V10C12 8.9 12.9 8 14 8H13V6.73C12.4 6.39 12 5.74 12 5C12 3.9 11.1 3 10 3C8.9 3 8 3.9 8 5C8 5.74 8.4 6.39 9 6.73V8H8C6.9 8 6 8.9 6 10V13.78C4.69 14.47 3.82 15.83 3.82 17.5C3.82 19.83 5.66 21.68 8 21.68C10.34 21.68 12.18 19.83 12.18 17.5C12.18 15.83 11.31 14.47 10 13.78V10C10 8.9 10.9 8 12 8H13V6.73C13.6 6.39 14 5.74 14 5C14 3.9 13.1 3 12 3Z"/>
+                        </svg>
+                    </div>
+                    <h3>Mulheres</h3>
+                    <p class="dresscode-description">Vestido de festa ou traje elegante</p>
+                    <div class="color-suggestions">
+                        <span class="color-dot" style="background-color: #E8DED4;"></span>
+                        <span class="color-dot" style="background-color: #BFA98A;"></span>
+                        <span class="color-dot" style="background-color: #3E5C58;"></span>
+                        <span class="color-dot" style="background-color: #c9a959;"></span>
+                    </div>
+                </div>
+            </div>
+            
+            <div class="dresscode-note">
+                <p><strong>Nota:</strong> Pedimos que evitem cores muito claras (como branco ou off-white) para que a noiva possa brilhar sozinha neste dia especial!</p>
+            </div>
+        </div>
+    </section>
+
+    <!-- Upload de Fotos -->
+    <section class="section" id="fotos">
+        <div class="container">
+            <h2 class="section-title">Compartilhe Seus Momentos</h2>
+            <p class="section-subtitle">Tire fotos e vídeos do grande dia e compartilhe conosco!</p>
+            
+            <div class="upload-area" id="uploadArea">
+                <div class="upload-icon">
+                    <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">
+                        <path d="M19.35 10.04C18.67 6.59 15.64 4 12 4C9.11 4 6.6 5.64 5.35 8.04C2.34 8.36 0 10.91 0 14C0 17.31 2.69 20 6 20H19C21.76 20 24 17.76 24 15C24 12.36 21.95 10.22 19.35 10.04ZM14 13V17H10V13H7L12 8L17 13H14Z"/>
+                    </svg>
+                </div>
+                <p class="upload-text">Arraste suas fotos aqui ou clique para selecionar</p>
+                <input type="file" id="fileInput" multiple accept="image/*,video/*" style="display: none;">
+                <button class="btn btn-outline" id="selectFilesBtn">Selecionar Arquivos</button>
+            </div>
+            
+            <div class="upload-progress" id="uploadProgress" style="display: none;">
+                <div class="progress-bar">
+                    <div class="progress-fill" id="progressFill"></div>
+                </div>
+                <p class="progress-text" id="progressText">Enviando... 0%</p>
+            </div>
+            
+            <div class="uploaded-files" id="uploadedFiles">
+                <h3>Fotos Enviadas</h3>
+                <div class="files-grid" id="filesGrid"></div>
+            </div>
+        </div>
+    </section>
+
+    <!-- Footer -->
+    <footer class="footer">
+        <div class="container">
+            <p class="footer-text">Uilson & Rafaela - 15 de Junho de 2026</p>
+            <p class="footer-love">Feito com amor</p>
+        </div>
+    </footer>
+
+    <script src="script.js"></script>
+</body>
+</html>

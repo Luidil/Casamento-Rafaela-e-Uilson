@@ -1,0 +1,771 @@
+/* ========================================
+   Wedding Website - Styles
+   Paleta: Earth Tones / Warm Neutrals
+   ======================================== */
+
+:root {
+    /* Primary Colors - Earth Tones */
+    --bege-quente: #C9A27E;
+    --marrom-caramelo: #8B5E4A;
+    --nude-areia: #E6D3C1;
+    
+    /* Extended Palette */
+    --bege-claro: #F5EDE3;
+    --marrom-escuro: #5D3A32;
+    --dourado: #B8956B;
+    --creme: #FAF7F2;
+    
+    /* Neutrals */
+    --branco: #FFFFFF;
+    --cinza-escuro: #2D2D2D;
+    --cinza-medio: #666666;
+    --cinza-claro: #F0F0F0;
+    
+    /* Semantic Colors */
+    --success: #4A7C59;
+    --error: #A65D57;
+    
+    /* Typography */
+    --font-display: 'Cormorant Garamond', serif;
+    --font-body: 'Montserrat', sans-serif;
+    
+    /* Spacing */
+    --spacing-xs: 0.5rem;
+    --spacing-sm: 1rem;
+    --spacing-md: 2rem;
+    --spacing-lg: 4rem;
+    --spacing-xl: 6rem;
+    
+    /* Border Radius */
+    --radius-sm: 4px;
+    --radius-md: 8px;
+    --radius-lg: 16px;
+    --radius-full: 50%;
+}
+
+* {
+    margin: 0;
+    padding: 0;
+    box-sizing: border-box;
+}
+
+html {
+    scroll-behavior: smooth;
+}
+
+body {
+    font-family: var(--font-body);
+    font-weight: 400;
+    line-height: 1.6;
+    color: var(--cinza-escuro);
+    background-color: var(--creme);
+}
+
+/* ========================================
+   Hero Section
+   ======================================== */
+
+.hero {
+    height: 100vh;
+    min-height: 600px;
+    background: linear-gradient(
+        135deg,
+        var(--marrom-caramelo) 0%,
+        var(--bege-quente) 50%,
+        var(--nude-areia) 100%
+    );
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    text-align: center;
+    position: relative;
+    overflow: hidden;
+}
+
+.hero::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    bottom: 0;
+    background: url('data:image/svg+xml,<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 100 100"><circle cx="50" cy="50" r="1" fill="rgba(255,255,255,0.1)"/></svg>');
+    opacity: 0.3;
+}
+
+.hero-content {
+    position: relative;
+    z-index: 1;
+    padding: var(--spacing-md);
+}
+
+.save-the-date {
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    font-weight: 500;
+    letter-spacing: 0.3em;
+    text-transform: uppercase;
+    color: var(--branco);
+    margin-bottom: var(--spacing-sm);
+    opacity: 0.9;
+}
+
+.couple-names {
+    font-family: var(--font-display);
+    font-size: clamp(3rem, 10vw, 6rem);
+    font-weight: 400;
+    color: var(--branco);
+    line-height: 1.1;
+    margin-bottom: var(--spacing-sm);
+    text-shadow: 0 2px 20px rgba(0, 0, 0, 0.2);
+}
+
+.wedding-date {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    font-weight: 400;
+    color: var(--branco);
+    opacity: 0.95;
+    letter-spacing: 0.1em;
+}
+
+/* ========================================
+   Navigation
+   ======================================== */
+
+.navbar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    right: 0;
+    background: rgba(250, 247, 242, 0.95);
+    backdrop-filter: blur(10px);
+    z-index: 1000;
+    padding: var(--spacing-sm) 0;
+    box-shadow: 0 2px 20px rgba(0, 0, 0, 0.05);
+}
+
+.nav-links {
+    list-style: none;
+    display: flex;
+    justify-content: center;
+    flex-wrap: wrap;
+    gap: var(--spacing-md);
+    padding: 0 var(--spacing-md);
+}
+
+.nav-links a {
+    font-family: var(--font-body);
+    font-size: 0.85rem;
+    font-weight: 500;
+    text-decoration: none;
+    color: var(--marrom-caramelo);
+    letter-spacing: 0.05em;
+    text-transform: uppercase;
+    transition: all 0.3s ease;
+    position: relative;
+}
+
+.nav-links a::after {
+    content: '';
+    position: absolute;
+    bottom: -4px;
+    left: 0;
+    width: 0;
+    height: 2px;
+    background: var(--bege-quente);
+    transition: width 0.3s ease;
+}
+
+.nav-links a:hover {
+    color: var(--bege-quente);
+}
+
+.nav-links a:hover::after {
+    width: 100%;
+}
+
+/* ========================================
+   Sections
+   ======================================== */
+
+.section {
+    padding: var(--spacing-xl) 0;
+    min-height: 100vh;
+}
+
+.container {
+    max-width: 1200px;
+    margin: 0 auto;
+    padding: 0 var(--spacing-md);
+}
+
+.section-title {
+    font-family: var(--font-display);
+    font-size: clamp(2rem, 5vw, 3rem);
+    font-weight: 400;
+    color: var(--marrom-caramelo);
+    text-align: center;
+    margin-bottom: var(--spacing-xs);
+}
+
+.section-subtitle {
+    font-family: var(--font-body);
+    font-size: 1rem;
+    color: var(--cinza-medio);
+    text-align: center;
+    margin-bottom: var(--spacing-lg);
+    font-weight: 300;
+}
+
+/* ========================================
+   Local Section
+   ======================================== */
+
+.local-info {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-lg);
+}
+
+.local-card {
+    background: var(--branco);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 4px 20px rgba(139, 94, 74, 0.1);
+    text-align: center;
+    transition: transform 0.3s ease;
+}
+
+.local-card:hover {
+    transform: translateY(-5px);
+}
+
+.local-card h3 {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    color: var(--marrom-caramelo);
+    margin-bottom: var(--spacing-sm);
+}
+
+.local-name {
+    font-family: var(--font-body);
+    font-size: 1.1rem;
+    font-weight: 500;
+    color: var(--cinza-escuro);
+    margin-bottom: var(--spacing-xs);
+}
+
+.local-address,
+.local-city {
+    font-size: 0.9rem;
+    color: var(--cinza-medio);
+    margin-bottom: var(--spacing-xs);
+}
+
+.local-time {
+    font-size: 1rem;
+    font-weight: 500;
+    color: var(--bege-quente);
+    margin-top: var(--spacing-sm);
+}
+
+.map-container {
+    border-radius: var(--radius-lg);
+    overflow: hidden;
+    margin-bottom: var(--spacing-md);
+    box-shadow: 0 4px 20px rgba(139, 94, 74, 0.15);
+}
+
+/* ========================================
+   Buttons
+   ======================================== */
+
+.btn {
+    display: inline-block;
+    padding: 1rem 2rem;
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    font-weight: 500;
+    letter-spacing: 0.1em;
+    text-transform: uppercase;
+    text-decoration: none;
+    border-radius: var(--radius-md);
+    cursor: pointer;
+    transition: all 0.3s ease;
+    border: 2px solid transparent;
+}
+
+.btn-primary {
+    background: var(--marrom-caramelo);
+    color: var(--branco);
+    border-color: var(--marrom-caramelo);
+}
+
+.btn-primary:hover {
+    background: var(--marrom-escuro);
+    border-color: var(--marrom-escuro);
+    transform: translateY(-2px);
+    box-shadow: 0 4px 15px rgba(139, 94, 74, 0.3);
+}
+
+.btn-outline {
+    background: transparent;
+    color: var(--marrom-caramelo);
+    border-color: var(--marrom-caramelo);
+}
+
+.btn-outline:hover {
+    background: var(--marrom-caramelo);
+    color: var(--branco);
+}
+
+/* ========================================
+   RSVP Form
+   ======================================== */
+
+.rsvp-form {
+    max-width: 600px;
+    margin: 0 auto;
+    background: var(--branco);
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 4px 30px rgba(139, 94, 74, 0.1);
+}
+
+.form-group {
+    margin-bottom: var(--spacing-md);
+}
+
+.form-group label {
+    display: block;
+    font-family: var(--font-body);
+    font-size: 0.9rem;
+    font-weight: 500;
+    color: var(--cinza-escuro);
+    margin-bottom: var(--spacing-xs);
+    letter-spacing: 0.05em;
+}
+
+.form-group input[type="text"],
+.form-group input[type="email"],
+.form-group input[type="tel"],
+.form-group select,
+.form-group textarea {
+    width: 100%;
+    padding: 0.875rem 1rem;
+    font-family: var(--font-body);
+    font-size: 1rem;
+    color: var(--cinza-escuro);
+    background: var(--bege-claro);
+    border: 2px solid transparent;
+    border-radius: var(--radius-md);
+    transition: all 0.3s ease;
+}
+
+.form-group input:focus,
+.form-group select:focus,
+.form-group textarea:focus {
+    outline: none;
+    border-color: var(--bege-quente);
+    background: var(--branco);
+}
+
+.form-group textarea {
+    resize: vertical;
+    min-height: 100px;
+}
+
+/* Radio Buttons */
+.radio-group {
+    display: flex;
+    flex-direction: column;
+    gap: var(--spacing-sm);
+}
+
+.radio-label {
+    display: flex;
+    align-items: center;
+    gap: var(--spacing-sm);
+    cursor: pointer;
+    font-size: 1rem;
+}
+
+.radio-label input[type="radio"] {
+    display: none;
+}
+
+.radio-custom {
+    width: 24px;
+    height: 24px;
+    border: 2px solid var(--bege-quente);
+    border-radius: var(--radius-full);
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    transition: all 0.3s ease;
+}
+
+.radio-label input[type="radio"]:checked + .radio-custom {
+    background: var(--bege-quente);
+}
+
+.radio-label input[type="radio"]:checked + .radio-custom::after {
+    content: '✓';
+    color: var(--branco);
+    font-size: 14px;
+}
+
+.rsvp-status {
+    text-align: center;
+    padding: var(--spacing-lg);
+}
+
+.success-message {
+    background: var(--branco);
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 4px 30px rgba(74, 124, 89, 0.15);
+}
+
+.checkmark {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    width: 60px;
+    height: 60px;
+    background: var(--success);
+    color: var(--branco);
+    border-radius: var(--radius-full);
+    font-size: 2rem;
+    margin-bottom: var(--spacing-sm);
+}
+
+.success-message h3 {
+    font-family: var(--font-display);
+    font-size: 2rem;
+    color: var(--marrom-caramelo);
+    margin-bottom: var(--spacing-xs);
+}
+
+/* ========================================
+   Dress Code Section
+   ======================================== */
+
+.dresscode-container {
+    display: grid;
+    grid-template-columns: repeat(auto-fit, minmax(280px, 1fr));
+    gap: var(--spacing-md);
+    margin-bottom: var(--spacing-md);
+}
+
+.dresscode-card {
+    background: var(--branco);
+    padding: var(--spacing-lg);
+    border-radius: var(--radius-lg);
+    box-shadow: 0 4px 20px rgba(139, 94, 74, 0.1);
+    text-align: center;
+    transition: transform 0.3s ease;
+}
+
+.dresscode-card:hover {
+    transform: translateY(-5px);
+}
+
+.dresscode-icon {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto var(--spacing-sm);
+    color: var(--bege-quente);
+}
+
+.dresscode-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.dresscode-card h3 {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    color: var(--marrom-caramelo);
+    margin-bottom: var(--spacing-xs);
+}
+
+.dresscode-description {
+    font-size: 1rem;
+    color: var(--cinza-medio);
+    margin-bottom: var(--spacing-sm);
+}
+
+.color-suggestions {
+    display: flex;
+    justify-content: center;
+    gap: var(--spacing-sm);
+    flex-wrap: wrap;
+}
+
+.color-dot {
+    width: 36px;
+    height: 36px;
+    border-radius: var(--radius-full);
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.15);
+    cursor: pointer;
+    transition: transform 0.3s ease;
+}
+
+.color-dot:hover {
+    transform: scale(1.2);
+}
+
+.dresscode-note {
+    background: var(--nude-areia);
+    padding: var(--spacing-md);
+    border-radius: var(--radius-md);
+    text-align: center;
+    max-width: 600px;
+    margin: 0 auto;
+}
+
+.dresscode-note p {
+    font-size: 0.95rem;
+    color: var(--marrom-caramelo);
+}
+
+.dresscode-note strong {
+    color: var(--marrom-escuro);
+}
+
+/* ========================================
+   Upload Photos Section
+   ======================================== */
+
+.upload-area {
+    background: var(--branco);
+    border: 3px dashed var(--bege-quente);
+    border-radius: var(--radius-lg);
+    padding: var(--spacing-lg);
+    text-align: center;
+    cursor: pointer;
+    transition: all 0.3s ease;
+    max-width: 600px;
+    margin: 0 auto var(--spacing-md);
+}
+
+.upload-area:hover,
+.upload-area.dragover {
+    background: var(--bege-claro);
+    border-color: var(--marrom-caramelo);
+}
+
+.upload-icon {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto var(--spacing-sm);
+    color: var(--bege-quente);
+}
+
+.upload-icon svg {
+    width: 100%;
+    height: 100%;
+}
+
+.upload-text {
+    font-size: 1rem;
+    color: var(--cinza-medio);
+    margin-bottom: var(--spacing-sm);
+}
+
+.upload-progress {
+    max-width: 600px;
+    margin: 0 auto var(--spacing-md);
+}
+
+.progress-bar {
+    height: 8px;
+    background: var(--bege-claro);
+    border-radius: var(--radius-full);
+    overflow: hidden;
+}
+
+.progress-fill {
+    height: 100%;
+    background: linear-gradient(90deg, var(--marrom-caramelo), var(--bege-quente));
+    border-radius: var(--radius-full);
+    transition: width 0.3s ease;
+    width: 0%;
+}
+
+.progress-text {
+    font-size: 0.9rem;
+    color: var(--cinza-medio);
+    text-align: center;
+    margin-top: var(--spacing-xs);
+}
+
+.uploaded-files {
+    max-width: 800px;
+    margin: 0 auto;
+}
+
+.uploaded-files h3 {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    color: var(--marrom-caramelo);
+    text-align: center;
+    margin-bottom: var(--spacing-md);
+}
+
+.files-grid {
+    display: grid;
+    grid-template-columns: repeat(auto-fill, minmax(150px, 1fr));
+    gap: var(--spacing-sm);
+}
+
+.file-item {
+    position: relative;
+    aspect-ratio: 1;
+    border-radius: var(--radius-md);
+    overflow: hidden;
+    background: var(--bege-claro);
+}
+
+.file-item img {
+    width: 100%;
+    height: 100%;
+    object-fit: cover;
+}
+
+.file-item .remove-btn {
+    position: absolute;
+    top: 5px;
+    right: 5px;
+    width: 25px;
+    height: 25px;
+    background: rgba(0, 0, 0, 0.5);
+    color: var(--branco);
+    border: none;
+    border-radius: var(--radius-full);
+    cursor: pointer;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 14px;
+    transition: background 0.3s ease;
+}
+
+.file-item .remove-btn:hover {
+    background: var(--error);
+}
+
+/* ========================================
+   Footer
+   ======================================== */
+
+.footer {
+    background: var(--marrom-escuro);
+    color: var(--nude-areia);
+    padding: var(--spacing-lg) 0;
+    text-align: center;
+}
+
+.footer-text {
+    font-family: var(--font-display);
+    font-size: 1.5rem;
+    margin-bottom: var(--spacing-xs);
+}
+
+.footer-love {
+    font-size: 0.9rem;
+    opacity: 0.7;
+}
+
+/* ========================================
+   Responsive Design
+   ======================================== */
+
+@media (max-width: 768px) {
+    .nav-links {
+        gap: var(--spacing-sm);
+    }
+    
+    .nav-links a {
+        font-size: 0.75rem;
+    }
+    
+    .section {
+        padding: var(--spacing-lg) 0;
+    }
+    
+    .rsvp-form {
+        padding: var(--spacing-md);
+    }
+    
+    .dresscode-container {
+        grid-template-columns: 1fr;
+    }
+    
+    .local-info {
+        grid-template-columns: 1fr;
+    }
+}
+
+@media (max-width: 480px) {
+    .hero-content {
+        padding: var(--spacing-sm);
+    }
+    
+    .couple-names {
+        font-size: 2.5rem;
+    }
+    
+    .wedding-date {
+        font-size: 1.2rem;
+    }
+    
+    .btn {
+        padding: 0.75rem 1.5rem;
+        font-size: 0.8rem;
+    }
+}
+
+/* ========================================
+   Animations
+   ======================================== */
+
+@keyframes fadeInUp {
+    from {
+        opacity: 0;
+        transform: translateY(20px);
+    }
+    to {
+        opacity: 1;
+        transform: translateY(0);
+    }
+}
+
+.section {
+    animation: fadeInUp 0.6s ease-out;
+}
+
+.section:nth-child(even) {
+    background: var(--bege-claro);
+}
+
+/* Scrollbar */
+::-webkit-scrollbar {
+    width: 8px;
+}
+
+::-webkit-scrollbar-track {
+    background: var(--bege-claro);
+}
+
+::-webkit-scrollbar-thumb {
+    background: var(--bege-quente);
+    border-radius: var(--radius-full);
+}
+
+::-webkit-scrollbar-thumb:hover {
+    background: var(--marrom-caramelo);
+}
