@@ -8,8 +8,13 @@ document.addEventListener('DOMContentLoaded', () => {
     initNavigation();
     initRSVPForm();
     initPhotoUpload();
+    initPhotoShareQr();
     initScrollEffects();
 });
+
+const appState = {
+    uploadedFiles: []
+};
 
 /**
  * Navegação suave e navbar fixo
@@ -100,17 +105,25 @@ function initRSVPForm() {
         
         // Coleta os dados do formulário
         const formData = new FormData(form);
+        
+        // Se houver foto, envia primeiro
+        let fotoUrl = '';
+        if (appState.uploadedFiles.length > 0) {
+            fotoUrl = appState.uploadedFiles[0].url;
+        }
+        
         const data = {
             nome: formData.get('nome'),
             email: formData.get('email'),
-            telefone: formData.get('telefone'),
-            acompanhantes: formData.get('acompanhantes'),
             presenca: formData.get('presenca'),
-            mensagem: formData.get('mensagem')
+            mensagem: formData.get('mensagem'),
+            fotoUrl: fotoUrl
         };
         
+        console.log('Dados coletados:', data);
+        
         // Validação básica
-        if (!data.nome || !data.email || !data.telefone || !data.presenca) {
+        if (!data.nome || !data.email || !data.presenca) {
             showAlert('Por favor, preencha todos os campos obrigatórios.', 'error');
             return;
         }
@@ -134,25 +147,35 @@ function initRSVPForm() {
 }
 
 /**
- * Simula o envio dos dados (substitua por chamada real à API)
+ * Envia os dados para a API
  */
-function simulateRSVPSubmit(data) {
-    return new Promise((resolve) => {
-        // Simula delay de rede
-        setTimeout(() => {
-            console.log('RSVP Data:', data);
-            
-            // Salva no localStorage para demonstração
-            const rsvps = JSON.parse(localStorage.getItem('rsvps') || '[]');
-            rsvps.push({
-                ...data,
-                timestamp: new Date().toISOString()
-            });
-            localStorage.setItem('rsvps', JSON.stringify(rsvps));
-            
-            resolve({ success: true });
-        }, 1500);
+async function simulateRSVPSubmit(data) {
+    const response = await fetch('/api/confirmacao', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json' },
+        body: JSON.stringify(data)
     });
+    
+    const result = await response.json();
+    
+    if (!result.success) {
+        throw new Error(result.message);
+    }
+    
+    return result;
+}
+
+function initPhotoShareQr() {
+    const downloadQrPdfBtn = document.getElementById('downloadQrPdfBtn');
+
+    if (!downloadQrPdfBtn) return;
+
+    const shareUrl = new URL(window.location.href);
+    shareUrl.hash = 'fotos';
+
+    const shareTarget = `${shareUrl.pathname}${shareUrl.search}${shareUrl.hash}`;
+    downloadQrPdfBtn.href = `/api/qrcode-pdf?target=${encodeURIComponent(shareTarget)}`;
+    downloadQrPdfBtn.setAttribute('download', 'qrcode-fotos.pdf');
 }
 
 /**
@@ -169,7 +192,6 @@ function initPhotoUpload() {
     
     if (!uploadArea || !fileInput) return;
     
-    let uploadedFiles = [];
     
     // Clique na área de upload
     uploadArea.addEventListener('click', () => {
@@ -222,56 +244,55 @@ function initPhotoUpload() {
         });
     }
     
-    function uploadFile(file) {
+    async function uploadFile(file) {
         // Mostra progresso
         uploadProgress.style.display = 'block';
         progressFill.style.width = '0%';
         progressText.textContent = `Enviando ${file.name}...`;
         
-        // Simula upload (aqui você pode conectar com um backend real)
-        const formData = new FormData();
-        formData.append('file', file);
-        
-        // Simula progresso
-        let progress = 0;
-        const progressInterval = setInterval(() => {
-            progress += Math.random() * 30;
-            if (progress > 100) progress = 100;
+        try {
+            const formData = new FormData();
+            formData.append('file', file);
             
-            progressFill.style.width = `${progress}%`;
-            progressText.textContent = `Enviando ${file.name}... ${Math.round(progress)}%`;
+            const response = await fetch('/api/upload', {
+                method: 'POST',
+                body: formData
+            });
             
-            if (progress >= 100) {
-                clearInterval(progressInterval);
+            const result = await response.json();
+            
+            if (result.success) {
+                // Adiciona arquivo à lista com URL do servidor
+                const fileId = Date.now();
                 
-                // Adiciona arquivo à lista
-                const fileId = Date.now() + Math.random();
-                const fileUrl = URL.createObjectURL(file);
-                
-                uploadedFiles.push({
+                appState.uploadedFiles.push({
                     id: fileId,
                     name: file.name,
-                    url: fileUrl,
+                    url: result.url,
                     type: file.type.startsWith('image') ? 'image' : 'video'
                 });
                 
                 renderFiles();
-                
-                // Salva no localStorage para demonstração
                 saveFilesToStorage();
                 
                 setTimeout(() => {
                     uploadProgress.style.display = 'none';
                     showAlert(`${file.name} enviado com sucesso!`, 'success');
                 }, 500);
+            } else {
+                throw new Error(result.message || 'Erro ao enviar');
             }
-        }, 200);
+        } catch (error) {
+            uploadProgress.style.display = 'none';
+            showAlert(`Erro ao enviar ${file.name}: ${error.message}`, 'error');
+            console.error('Upload error:', error);
+        }
     }
     
     function renderFiles() {
         filesGrid.innerHTML = '';
         
-        uploadedFiles.forEach(file => {
+        appState.uploadedFiles.forEach(file => {
             const fileItem = document.createElement('div');
             fileItem.className = 'file-item';
             fileItem.dataset.id = file.id;
@@ -288,13 +309,13 @@ function initPhotoUpload() {
                 `;
             }
             
-            filesGrid.appendChild(file-item);
+            filesGrid.appendChild(fileItem);
         });
     }
     
     function saveFilesToStorage() {
         // Salva apenas metadados (não objetos blob grandes)
-        const fileMeta = uploadedFiles.map(f => ({
+        const fileMeta = appState.uploadedFiles.map(f => ({
             id: f.id,
             name: f.name,
             type: f.type
@@ -304,7 +325,7 @@ function initPhotoUpload() {
     
     // Função global para remover arquivo
     window.removeFile = function(fileId) {
-        uploadedFiles = uploadedFiles.filter(f => f.id !== fileId);
+        appState.uploadedFiles = appState.uploadedFiles.filter(f => f.id !== fileId);
         renderFiles();
         saveFilesToStorage();
         showAlert('Arquivo removido.', 'success');

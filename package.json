@@ -1,0 +1,17 @@
+{
+  "name": "casamento-rafaela-e-uilson",
+  "version": "1.0.0",
+  "description": "Site de Casamento - Rafaela & Uilson",
+  "main": "server.js",
+  "scripts": {
+    "start": "node server.js",
+    "dev": "node server.js"
+  },
+  "dependencies": {
+    "dotenv": "^16.6.1",
+    "pg": "^8.11.3",
+    "multiparty": "^4.2.3",
+    "pdfkit": "^0.17.2",
+    "qrcode": "^1.5.4"
+  }
+}

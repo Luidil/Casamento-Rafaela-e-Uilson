@@ -75,22 +75,6 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="telefone">Telefone</label>
-                    <input type="tel" id="telefone" name="telefone" required>
-                </div>
-                
-                <div class="form-group">
-                    <label for="acompanhantes">Número de Acompanhantes</label>
-                    <select id="acompanhantes" name="acompanhantes">
-                        <option value="0">0</option>
-                        <option value="1">1</option>
-                        <option value="2">2</option>
-                        <option value="3">3</option>
-                        <option value="4">4</option>
-                    </select>
-                </div>
-                
-                <div class="form-group">
                     <label>Você estará presente?</label>
                     <div class="radio-group">
                         <label class="radio-label">
@@ -128,6 +112,7 @@
     <section class="section" id="dresscode">
         <div class="container">
             <h2 class="section-title">Dress Code</h2>
+            <p class="dresscode-intro">Para um casamento durante a tarde, sugerimos producoes elegantes, leves e alegres, com conforto e sofisticacao na medida certa.</p>
             <p class="section-subtitle">Recomendamos a adoção desta paleta de cores, cuidadosamente selecionada para transmitir harmonia, elegância e equilíbrio visual:</p>
             
             <div class="dresscode-container">
@@ -138,7 +123,12 @@
                         </svg>
                     </div>
                     <h3>Homens</h3>
-                    <p class="dresscode-description">Traje Social completo (terno e gravata)</p>
+                    <p class="dresscode-description">Traje casual-formal ou esporte fino, bem arrumado e sem excessos.</p>
+                    <ul class="dresscode-list">
+                        <li><strong>Evite formalidade excessiva:</strong> nao e necessario terno completo nem gravata borboleta, salvo orientacao especifica.</li>
+                        <li><strong>Pecas-chave:</strong> camisas sociais coloridas em tons neutros ou pasteis, com calcas de sarja ou linho em bege, marinho ou cinza.</li>
+                        <li><strong>Toque final:</strong> sapatos sociais ou mocassins, com blazer opcional, relogio elegante e cinto coordenado.</li>
+                    </ul>
                     <div class="color-suggestions">
                         <span class="color-dot" style="background-color: #3E5C58;"></span>
                         <span class="color-dot" style="background-color: #786B59;"></span>
@@ -154,7 +144,12 @@
                         </svg>
                     </div>
                     <h3>Mulheres</h3>
-                    <p class="dresscode-description">Vestido de festa ou traje elegante</p>
+                    <p class="dresscode-description">Looks elegantes e leves para a tarde, com cor, movimento e personalidade.</p>
+                    <ul class="dresscode-list">
+                        <li><strong>Aposte em cores vibrantes e estampas:</strong> tons alegres e estampas florais sao otimas escolhas para o horario do evento.</li>
+                        <li><strong>Comprimentos variados:</strong> vestidos midi ou curtos, sem exageros, sao ideais. Macacao ou calca de alfaiataria com blusa elegante tambem funcionam muito bem.</li>
+                        <li><strong>Acessorios:</strong> brincos, colares e cintos podem dar o toque final e valorizar a producao.</li>
+                    </ul>
                     <div class="color-suggestions">
                         <span class="color-dot" style="background-color: #E8DED4;"></span>
                         <span class="color-dot" style="background-color: #BFA98A;"></span>
@@ -166,6 +161,7 @@
             
             <div class="dresscode-note">
                 <p><strong>Nota:</strong> Pedimos que evitem cores muito claras (como branco ou off-white) para que a noiva possa brilhar sozinha neste dia especial!</p>
+                <p class="dresscode-note-extra">Branco e off-white sao reservados aos noivos, para manter o destaque nesse momento especial.</p>
             </div>
         </div>
     </section>
@@ -176,6 +172,18 @@
             <h2 class="section-title">Compartilhe Seus Momentos</h2>
             <p class="section-subtitle">Tire fotos e vídeos do grande dia e compartilhe conosco!</p>
             
+            <div class="upload-share-card" id="uploadShareCard">
+                <div class="qr-code-content">
+                    <span class="qr-code-badge">PDF</span>
+                    <h3>Baixe o QR Code em PDF</h3>
+                    <p>Use o arquivo para imprimir ou compartilhar com os convidados.</p>
+
+                    <div class="share-actions">
+                        <a class="btn btn-primary" id="downloadQrPdfBtn" href="#">Baixar PDF</a>
+                    </div>
+                </div>
+            </div>
+
             <div class="upload-area" id="uploadArea">
                 <div class="upload-icon">
                     <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 24" fill="currentColor">

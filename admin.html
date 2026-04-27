@@ -1,0 +1,507 @@
+<!DOCTYPE html>
+<html lang="pt-BR">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Área dos Noivos - Rafaela & Uilson</title>
+    <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
+    <style>
+        :root {
+            /* Primary Colors - Earth Tones */
+            --bege-quente: #C9A27E;
+            --marrom-caramelo: #8B5E4A;
+            --nude-areia: #E6D3C1;
+            --bege-claro: #F5EDE3;
+            --marrom-escuro: #5D3A32;
+            --dourado: #B8956B;
+            --creme: #FAF7F2;
+            --branco: #FFFFFF;
+            --cinza-escuro: #2D2D2D;
+            --cinza-medio: #666666;
+            --success: #4A7C59;
+            --error: #A65D57;
+        }
+
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        html {
+            scroll-behavior: smooth;
+        }
+
+        body {
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 400;
+            line-height: 1.6;
+            color: var(--cinza-escuro);
+            background-color: var(--creme);
+            min-height: 100vh;
+        }
+
+        /* Header */
+        .admin-header {
+            background: linear-gradient(135deg, var(--marrom-caramelo) 0%, var(--marrom-escuro) 100%);
+            padding: 50px 20px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .admin-header::before {
+            content: '💍';
+            position: absolute;
+            font-size: 200px;
+            opacity: 0.1;
+            top: 50%;
+            left: 50%;
+            transform: translate(-50%, -50%);
+        }
+
+        .admin-header h1 {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3rem;
+            font-weight: 600;
+            color: var(--branco);
+            margin-bottom: 10px;
+            position: relative;
+        }
+
+        .admin-header p {
+            font-size: 1.2rem;
+            color: var(--nude-areia);
+            position: relative;
+        }
+
+        .admin-header .subtitle {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            color: var(--dourado);
+            margin-top: 5px;
+        }
+
+        .back-link {
+            display: inline-block;
+            margin-top: 25px;
+            padding: 12px 30px;
+            background: rgba(255,255,255,0.1);
+            color: var(--branco);
+            text-decoration: none;
+            border-radius: 30px;
+            border: 1px solid rgba(255,255,255,0.2);
+            transition: all 0.3s ease;
+            font-size: 0.9rem;
+        }
+
+        .back-link:hover {
+            background: rgba(255,255,255,0.2);
+            transform: translateY(-2px);
+        }
+
+        /* Container */
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 40px 20px;
+        }
+
+        /* Stats */
+        .stats-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+            gap: 25px;
+            margin-bottom: 50px;
+        }
+
+        .stat-card {
+            background: var(--branco);
+            padding: 35px;
+            border-radius: 16px;
+            text-align: center;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .stat-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 4px;
+        }
+
+        .stat-card.confirmados::before {
+            background: var(--success);
+        }
+
+        .stat-card.recusados::before {
+            background: var(--error);
+        }
+
+        .stat-card.total::before {
+            background: var(--dourado);
+        }
+
+        .stat-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 10px 35px rgba(0,0,0,0.1);
+        }
+
+        .stat-number {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 3.5rem;
+            font-weight: 700;
+            color: var(--marrom-caramelo);
+            line-height: 1;
+        }
+
+        .stat-label {
+            font-size: 0.95rem;
+            color: var(--cinza-medio);
+            margin-top: 10px;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+        }
+
+        /* Section Title */
+        .section-title {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 2.2rem;
+            font-weight: 600;
+            color: var(--marrom-caramelo);
+            margin: 50px 0 30px;
+            padding-bottom: 15px;
+            border-bottom: 2px solid var(--nude-areia);
+            display: flex;
+            align-items: center;
+            gap: 15px;
+        }
+
+        .section-title .emoji {
+            font-size: 1.5rem;
+        }
+
+        /* Guests Grid */
+        .guests-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
+            gap: 25px;
+        }
+
+        .guest-card {
+            background: var(--branco);
+            border-radius: 16px;
+            padding: 25px;
+            box-shadow: 0 3px 15px rgba(0,0,0,0.05);
+            transition: all 0.3s ease;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .guest-card::before {
+            content: '';
+            position: absolute;
+            top: 0;
+            left: 0;
+            width: 4px;
+            height: 100%;
+        }
+
+        .guest-card.confirmed::before {
+            background: var(--success);
+        }
+
+        .guest-card.declined::before {
+            background: var(--error);
+        }
+
+        .guest-card:hover {
+            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+            transform: translateY(-3px);
+        }
+
+        .guest-card.declined {
+            opacity: 0.75;
+        }
+
+        /* Guest Photo */
+        .guest-photo {
+            width: 100%;
+            height: 180px;
+            object-fit: cover;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            display: block;
+        }
+
+        .guest-photo:hover {
+            transform: scale(1.03);
+            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+        }
+
+        .guest-name {
+            font-family: 'Cormorant Garamond', serif;
+            font-size: 1.5rem;
+            font-weight: 600;
+            color: var(--cinza-escuro);
+            margin-bottom: 5px;
+        }
+
+        .guest-email {
+            font-size: 0.9rem;
+            color: var(--cinza-medio);
+            margin-bottom: 15px;
+        }
+
+        .guest-status {
+            display: inline-block;
+            padding: 6px 18px;
+            border-radius: 20px;
+            font-size: 0.85rem;
+            font-weight: 500;
+        }
+
+        .guest-status.confirmed {
+            background: rgba(74, 124, 89, 0.1);
+            color: var(--success);
+        }
+
+        .guest-status.declined {
+            background: rgba(166, 93, 87, 0.1);
+            color: var(--error);
+        }
+
+        .guest-message {
+            margin-top: 20px;
+            padding: 18px;
+            background: var(--bege-claro);
+            border-radius: 12px;
+            font-style: italic;
+            color: var(--cinza-medio);
+            border-left: 3px solid var(--dourado);
+        }
+
+        .guest-date {
+            margin-top: 15px;
+            font-size: 0.8rem;
+            color: var(--bege-quente);
+        }
+
+        /* Empty State */
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: var(--cinza-medio);
+            background: var(--branco);
+            border-radius: 16px;
+        }
+
+        .empty-state .icon {
+            font-size: 3rem;
+            margin-bottom: 20px;
+            opacity: 0.3;
+        }
+
+        /* Refresh Button */
+        .refresh-btn {
+            position: fixed;
+            bottom: 30px;
+            right: 30px;
+            width: 65px;
+            height: 65px;
+            border-radius: 50%;
+            background: linear-gradient(135deg, var(--marrom-caramelo), var(--marrom-escuro));
+            color: var(--branco);
+            border: none;
+            cursor: pointer;
+            box-shadow: 0 5px 25px rgba(0,0,0,0.2);
+            transition: all 0.3s ease;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+        }
+
+        .refresh-btn:hover {
+            transform: scale(1.1);
+            box-shadow: 0 8px 35px rgba(0,0,0,0.25);
+        }
+
+        .refresh-btn svg {
+            width: 24px;
+            height: 24px;
+        }
+
+        /* Loading */
+        .loading {
+            text-align: center;
+            padding: 40px;
+            color: var(--bege-quente);
+        }
+
+        /* Download Hint */
+        .download-hint {
+            font-size: 0.85rem;
+            color: var(--cinza-medio);
+            margin-bottom: 15px;
+            display: flex;
+            align-items: center;
+            gap: 5px;
+        }
+
+        /* Responsive */
+        @media (max-width: 768px) {
+            .admin-header h1 {
+                font-size: 2.2rem;
+            }
+
+            .stat-number {
+                font-size: 2.5rem;
+            }
+
+            .guests-grid {
+                grid-template-columns: 1fr;
+            }
+
+            .container {
+                padding: 30px 15px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <header class="admin-header">
+        <h1>Rafaela & Uilson</h1>
+        <p>Área dos Noivos</p>
+        <div class="subtitle">Confirmações de Presença</div>
+        <a href="index.html" class="back-link">← Voltar ao Site</a>
+    </header>
+
+    <main class="container">
+        <div class="stats-grid">
+            <div class="stat-card confirmados">
+                <div class="stat-number" id="confirmadosCount">0</div>
+                <div class="stat-label">Confirmados</div>
+            </div>
+            <div class="stat-card recusados">
+                <div class="stat-number" id="recusadosCount">0</div>
+                <div class="stat-label">Recusados</div>
+            </div>
+            <div class="stat-card total">
+                <div class="stat-number" id="totalCount">0</div>
+                <div class="stat-label">Total</div>
+            </div>
+        </div>
+
+        <h2 class="section-title">
+            <span class="emoji">✅</span>
+            Confirmados
+        </h2>
+        <div class="guests-grid" id="confirmadosList">
+            <div class="loading">Carregando confirmações...</div>
+        </div>
+
+        <h2 class="section-title" style="margin-top: 60px;">
+            <span class="emoji">❌</span>
+            Recusados
+        </h2>
+        <div class="guests-grid" id="recusadosList">
+            <div class="loading">Carregando...</div>
+        </div>
+    </main>
+
+    <button class="refresh-btn" onclick="loadData()" title="Atualizar dados">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
+            <path d="M23 4v6h-6M1 20v-6h6"/>
+            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
+        </svg>
+    </button>
+
+    <script>
+        async function loadData() {
+            try {
+                const response = await fetch('/api/admin/convidados');
+                const data = await response.json();
+                
+                if (data.success) {
+                    document.getElementById('confirmadosCount').textContent = data.confirmados?.length || 0;
+                    document.getElementById('recusadosCount').textContent = data.recusados?.length || 0;
+                    document.getElementById('totalCount').textContent = data.total || 0;
+                    
+                    renderGuests('confirmadosList', data.confirmados || []);
+                    renderGuests('recusadosList', data.recusados || []);
+                } else {
+                    console.error('Erro:', data.message);
+                }
+            } catch (error) {
+                console.error('Erro ao carregar dados:', error);
+            }
+        }
+
+        function renderGuests(containerId, guests) {
+            const container = document.getElementById(containerId);
+            
+            if (guests.length === 0) {
+                container.innerHTML = `
+                    <div class="empty-state">
+                        <div class="icon">👤</div>
+                        <p>Nenhum convidado nesta categoria</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            container.innerHTML = guests.map(guest => `
+                <div class="guest-card ${guest.Presenca === 1 ? 'confirmed' : 'declined'}">
+                    ${guest.FotoUrl ? `<img src="${guest.FotoUrl}" alt="${guest.Nome}" class="guest-photo" onclick="downloadPhoto('${guest.FotoUrl}', '${guest.Nome}')" title="Clique para baixar a foto">` : ''}
+                    <div class="guest-name">${guest.Nome}</div>
+                    <div class="guest-email">${guest.Email}</div>
+                    <span class="guest-status ${guest.Presenca === 1 ? 'confirmed' : 'declined'}">
+                        ${guest.Presenca === 1 ? '✅ Confirmado' : '❌ Recusado'}
+                    </span>
+                    ${guest.Mensagem ? `<div class="guest-message">"${guest.Mensagem}"</div>` : ''}
+                    <div class="guest-date">📅 ${formatDate(guest.DataConfirmacao)}</div>
+                </div>
+            `).join('');
+        }
+
+        function formatDate(dateStr) {
+            if (!dateStr) return 'Data não disponível';
+            const date = new Date(dateStr);
+            return date.toLocaleDateString('pt-BR', {
+                day: '2-digit',
+                month: '2-digit',
+                year: 'numeric',
+                hour: '2-digit',
+                minute: '2-digit'
+            });
+        }
+
+        async function downloadPhoto(url, nome) {
+            try {
+                const response = await fetch(url);
+                const blob = await response.blob();
+                const blobUrl = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                link.download = `foto-${nome.replace(/\s+/g, '-')}.jpg`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(blobUrl);
+            } catch (error) {
+                console.error('Erro ao baixar foto:', error);
+                window.open(url, '_blank');
+            }
+        }
+
+        loadData();
+    </script>
+</body>
+</html>
