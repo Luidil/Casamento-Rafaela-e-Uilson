@@ -923,11 +923,15 @@ body {
 
 @media (max-width: 768px) {
     .nav-links {
-        gap: var(--spacing-sm);
+        gap: 4px;
+        flex-wrap: wrap;
+        justify-content: center;
+        padding: 8px 10px;
     }
     
     .nav-links a {
-        font-size: 0.75rem;
+        font-size: 0.72rem;
+        padding: 4px 6px;
     }
     
     .section {

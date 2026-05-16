@@ -308,20 +308,24 @@ function initPhotoShareQr() {
     
     if (!canvas) return;
 
-    const shareUrl = new URL(window.location.href);
-    shareUrl.hash = 'fotos';
-
-    const shareTarget = `${shareUrl.pathname}${shareUrl.search}${shareUrl.hash}`;
+    // URL completa da seção de fotos
+    const shareUrl = window.location.origin + window.location.pathname + '#fotos';
     
-    // Usar API de QR Code confiável
-    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(shareTarget)}&color=8B5E4A&bgcolor=FAF7F2`;
+    // Usar API do QR Server - mais confiável em todos os dispositivos
+    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(shareUrl)}&color=8B5E4A&bgcolor=FAF7F2&margin=10`;
     
     const img = document.createElement('img');
     img.src = qrApiUrl;
-    img.style.maxWidth = '250px';
-    img.style.width = '100%';
-    img.style.height = 'auto';
-    img.alt = 'QR Code';
+    img.style.cssText = 'width:250px;height:250px;border-radius:12px;display:block;margin:0 auto;';
+    img.alt = 'QR Code para compartilhar fotos';
+    
+    // Fallback se a imagem não carregar
+    img.onerror = () => {
+        const fallback = document.createElement('div');
+        fallback.style.cssText = 'width:250px;height:250px;display:flex;align-items:center;justify-content:center;background:#FAF7F2;border-radius:12px;border:2px dashed #C9A27E;margin:0 auto;text-align:center;padding:20px;box-sizing:border-box;';
+        fallback.innerHTML = `<div><p style="color:#8B5E4A;font-size:0.9rem;margin:0">📸 Acesse a seção de fotos para compartilhar</p><p style="color:#C9A27E;font-size:0.75rem;margin-top:8px">${shareUrl}</p></div>`;
+        canvas.parentNode.replaceChild(fallback, canvas);
+    };
     
     canvas.parentNode.replaceChild(img, canvas);
 }
