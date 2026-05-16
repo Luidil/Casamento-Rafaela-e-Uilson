@@ -399,18 +399,29 @@ function initPhotoUpload() {
         progressText.textContent = `Enviando ${file.name}...`;
         
         try {
-            const formData = new FormData();
-            formData.append('file', file);
-            
+            // Converter arquivo para base64
+            const base64 = await new Promise((resolve, reject) => {
+                const reader = new FileReader();
+                reader.onload = () => resolve(reader.result.split(',')[1]);
+                reader.onerror = reject;
+                reader.readAsDataURL(file);
+            });
+
+            progressFill.style.width = '50%';
+
             const response = await fetch('/.netlify/functions/upload', {
                 method: 'POST',
-                body: formData
+                headers: { 'Content-Type': 'application/json' },
+                body: JSON.stringify({
+                    fileName: file.name,
+                    fileData: base64,
+                    fileType: file.type
+                })
             });
             
             const result = await response.json();
             
             if (result.success) {
-                // Adiciona arquivo à lista com URL do servidor
                 const fileId = Date.now();
                 
                 appState.uploadedFiles.push({
@@ -423,6 +434,7 @@ function initPhotoUpload() {
                 renderFiles();
                 saveFilesToStorage();
                 
+                progressFill.style.width = '100%';
                 setTimeout(() => {
                     uploadProgress.style.display = 'none';
                     showAlert(`${file.name} enviado com sucesso!`, 'success');
@@ -578,8 +590,7 @@ function initPhotoUpload() {
     
     function loadFilesFromStorage() {
         try {
-            // Carrega as fotos do servidor via API
-            fetch('/.netlify/functions/uploaded-files')
+            fetch('/.netlify/functions/upload')
                 .then(res => res.json())
                 .then(data => {
                     if (data.success && data.files) {
