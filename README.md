@@ -1,68 +1,82 @@
-# Site de Casamento - Rafaela & Uilson
+# 💍 Site de Casamento - Rafaela & Uilson
 
-Aplicacao simples em Node.js para confirmacao de presenca, upload de fotos e geracao de QR Code em PDF.
+Um site elegante e responsivo para o casamento de Rafaela e Uilson, com RSVP, galeria de fotos e muito mais!
 
-## Requisitos
+## 🌐 Acesso
 
-- Node.js 18+
-- PostgreSQL
+- **Site Principal**: https://casamentorafaelaeuilson.netlify.app
+- **Área dos Noivos**: https://casamentorafaelaeuilson.netlify.app/admin.html
 
-## Configuracao
+## ✨ Funcionalidades
 
-1. Instale as dependencias:
+- ✅ Formulário de Confirmação de Presença (RSVP)
+- 📸 Galeria de Fotos com Upload
+- 🎬 Suporte a Vídeos
+- 📧 Envio de Emails de Confirmação
+- 📊 Painel Administrativo com Estatísticas
+- 📥 Download de Fotos e Exportação CSV
+- 🗺️ Mapa com Localização do Restaurante
+- ⏳ Contagem Regressiva para o Casamento
+- 📱 Design Responsivo
+
+## 🛠️ Tecnologia
+
+- **Frontend**: HTML5, CSS3, JavaScript Vanilla
+- **Backend**: Netlify Functions + SQLite
+- **Email**: Nodemailer (Gmail)
+- **Hospedagem**: Netlify
+
+## 📦 Instalação Local
 
 ```bash
+# Instalar dependências
 npm install
+
+# Rodar em desenvolvimento
+npm run dev
 ```
 
-2. Copie o arquivo de exemplo:
+## 🚀 Deploy
 
-```bash
-copy .env.example .env
+O site é automaticamente deployado no Netlify quando você faz push para a branch `main`.
+
+## 📧 Configuração de Email
+
+Para que os emails funcionem, configure as variáveis de ambiente no Netlify:
+
+1. Vá em **Site Settings** → **Build & Deploy** → **Environment**
+2. Adicione:
+   - `EMAIL_SERVICE`: `gmail`
+   - `EMAIL_USER`: seu email Gmail
+   - `EMAIL_PASSWORD`: sua App Password do Gmail
+   - `EMAIL_FROM`: `Uilson & Rafaela <seu_email@gmail.com>`
+
+## 📝 Estrutura
+
+```
+├── index.html              # Página principal
+├── admin.html              # Painel administrativo
+├── styles.css              # Estilos
+├── script.js               # JavaScript principal
+├── netlify/
+│   └── functions/
+│       ├── confirmacao.js  # API de confirmação de presença
+│       └── admin-convidados.js  # API de listagem de convidados
+└── Fotos/                  # Galeria de fotos pré-carregadas
 ```
 
-3. Ajuste as credenciais do banco no `.env`:
+## 🎨 Cores
 
-```env
-DB_HOST=localhost
-DB_PORT=5433
-DB_NAME=casamento_db
-DB_USER=casamento_user
-DB_PASSWORD=casamento123
-```
+- Marrom Caramelo: `#8B5E4A`
+- Bege Quente: `#C9A27E`
+- Nude Areia: `#E6D3C1`
+- Bege Claro: `#F5EDE3`
+- Creme: `#FAF7F2`
 
-4. Execute o script SQL:
+## 📄 Licença
 
-```sql
--- no banco configurado acima
-\i database.sql
-```
+Projeto pessoal para o casamento de Rafaela & Uilson.
 
-## Executar
+---
 
-```bash
-npm start
-```
-
-Aplicacao:
-
-- Site principal: `http://localhost:5500`
-- Area dos noivos: `http://localhost:5500/admin.html`
-
-## Estrutura
-
-- `index.html`: pagina principal
-- `admin.html`: painel simples dos noivos
-- `styles.css`: estilos
-- `script.js`: comportamento do frontend
-- `server.js`: servidor HTTP e APIs
-- `database.sql`: criacao das tabelas PostgreSQL
-- `uploads/`: arquivos enviados
-
-## Endpoints
-
-- `POST /api/confirmacao`
-- `GET /api/confirmacoes`
-- `GET /api/admin/convidados`
-- `POST /api/upload`
-- `GET /api/qrcode-pdf?target=/%23fotos`
+Feito com ❤️ para um dia especial!
