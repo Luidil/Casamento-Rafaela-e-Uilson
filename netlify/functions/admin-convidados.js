@@ -1,42 +1,9 @@
-// ID da Google Sheet
-const SHEET_ID = '1RTxxXaK4P0EswifIkob5YcdX6PzVAOK7EncuN_8GbPM';
+const { createClient } = require('@supabase/supabase-js');
 
-// Buscar dados da Google Sheet
-async function getConvidados() {
-    try {
-        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
-        const response = await fetch(url);
-        const text = await response.text();
-        
-        // Remove o prefixo da resposta
-        const jsonStr = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
-        const data = JSON.parse(jsonStr);
-        
-        const convidados = [];
-        if (data.table && data.table.rows) {
-            data.table.rows.forEach((row, index) => {
-                if (index === 0) return; // Pula header
-                
-                const presencaRaw = row.c[3]?.v;
-                const presenca = presencaRaw === 'sim' || presencaRaw === true || presencaRaw === 1;
-                
-                convidados.push({
-                    Nome: row.c[1]?.v || '',
-                    Email: row.c[2]?.v || '',
-                    Presenca: presenca ? 1 : 0,
-                    Mensagem: row.c[4]?.v || '',
-                    FotoUrl: null,
-                    DataConfirmacao: row.c[5]?.v || new Date().toISOString()
-                });
-            });
-        }
-        
-        return convidados;
-    } catch (error) {
-        console.error('Erro ao buscar dados da Google Sheet:', error);
-        return [];
-    }
-}
+// Supabase
+const supabaseUrl = 'https://zuipsuyioiwiicghhubz.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1aXBzdXlpb2l3aWljZ2dodWJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTU4NjI5NzcsImV4cCI6MTczMTQxODk3N30.IjVQBvAWCZ0gTYdp';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
 exports.handler = async (event, context) => {
     const headers = {
@@ -52,24 +19,38 @@ exports.handler = async (event, context) => {
 
     try {
         if (event.httpMethod === 'GET') {
-            const convidados = await getConvidados();
-            const confirmados = convidados.filter(c => c.Presenca === 1);
-            const recusados = convidados.filter(c => c.Presenca === 0);
+            const { data, error } = await supabase
+                .from('convidados')
+                .select('*')
+                .order('data_confirmacao', { ascending: false });
 
-            console.log('Retornando convidados:', { 
-                confirmados: confirmados.length, 
-                recusados: recusados.length, 
-                total: convidados.length 
-            });
+            if (error) throw error;
+
+            const confirmados = data.filter(c => c.presenca === true);
+            const recusados = data.filter(c => c.presenca === false);
 
             return {
                 statusCode: 200,
                 headers,
                 body: JSON.stringify({
                     success: true,
-                    confirmados,
-                    recusados,
-                    total: convidados.length
+                    confirmados: confirmados.map(c => ({
+                        Nome: c.nome,
+                        Email: c.email,
+                        Presenca: c.presenca ? 1 : 0,
+                        Mensagem: c.mensagem,
+                        FotoUrl: c.foto_url,
+                        DataConfirmacao: c.data_confirmacao
+                    })),
+                    recusados: recusados.map(c => ({
+                        Nome: c.nome,
+                        Email: c.email,
+                        Presenca: c.presenca ? 1 : 0,
+                        Mensagem: c.mensagem,
+                        FotoUrl: c.foto_url,
+                        DataConfirmacao: c.data_confirmacao
+                    })),
+                    total: data.length
                 })
             };
         }

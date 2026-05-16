@@ -1,9 +1,12 @@
+const { createClient } = require('@supabase/supabase-js');
 const nodemailer = require('nodemailer');
 
-// URL do Apps Script (vem da variável de ambiente do Netlify)
-const GOOGLE_APPS_SCRIPT_URL = process.env.GOOGLE_APPS_SCRIPT_URL;
+// Supabase
+const supabaseUrl = 'https://zuipsuyioiwiicghhubz.supabase.co';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1aXBzdXlpb2l3aWljZ2hodWJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTU4NjI5NzcsImV4cCI6MTczMTQxODk3N30.IjVQBvAWCZ0gTYdp';
+const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Configurar email
+// Email
 const transporter = nodemailer.createTransport({
     service: process.env.EMAIL_SERVICE || 'gmail',
     auth: {
@@ -12,7 +15,6 @@ const transporter = nodemailer.createTransport({
     }
 });
 
-// Enviar email
 async function enviarEmailConfirmacao(nome, email) {
     try {
         if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
@@ -73,40 +75,6 @@ async function enviarEmailConfirmacao(nome, email) {
     }
 }
 
-// Salvar na Google Sheet via Apps Script
-async function salvarNaGoogleSheet(nome, email, presenca, mensagem) {
-    try {
-        if (!GOOGLE_APPS_SCRIPT_URL) {
-            throw new Error('GOOGLE_APPS_SCRIPT_URL não configurada');
-        }
-
-        console.log('Enviando para Google Sheet:', { nome, email, presenca, mensagem });
-
-        const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
-            method: 'POST',
-            headers: {
-                'Content-Type': 'application/json'
-            },
-            body: JSON.stringify({
-                nome,
-                email,
-                presenca,
-                mensagem
-            })
-        });
-
-        const text = await response.text();
-        console.log('Resposta bruta:', text);
-
-        const result = JSON.parse(text);
-        console.log('Resposta do Apps Script:', result);
-        return result.success;
-    } catch (error) {
-        console.error('Erro ao salvar na Google Sheet:', error);
-        throw error;
-    }
-}
-
 exports.handler = async (event, context) => {
     const headers = {
         'Access-Control-Allow-Origin': '*',
@@ -132,23 +100,47 @@ exports.handler = async (event, context) => {
                 };
             }
 
-            const presencaValue = presenca === 'sim' || presenca === true ? 'sim' : 'não';
+            const presencaValue = presenca === 'sim' || presenca === true;
 
-            // Salvar na Google Sheet
-            await salvarNaGoogleSheet(nome, email, presencaValue, mensagem);
+            // Verificar se já existe
+            const { data: existing } = await supabase
+                .from('convidados')
+                .select('id')
+                .eq('email', email)
+                .single();
 
-            // Enviar email se confirmou presença
-            if (presencaValue === 'sim') {
+            if (existing) {
+                // Atualizar
+                await supabase
+                    .from('convidados')
+                    .update({
+                        nome,
+                        presenca: presencaValue,
+                        mensagem: mensagem || null,
+                        data_confirmacao: new Date().toISOString()
+                    })
+                    .eq('email', email);
+            } else {
+                // Inserir
+                await supabase
+                    .from('convidados')
+                    .insert({
+                        nome,
+                        email,
+                        presenca: presencaValue,
+                        mensagem: mensagem || null
+                    });
+            }
+
+            // Enviar email se confirmou
+            if (presencaValue) {
                 await enviarEmailConfirmacao(nome, email);
             }
 
             return {
                 statusCode: 200,
                 headers,
-                body: JSON.stringify({ 
-                    success: true, 
-                    message: 'Confirmação enviada com sucesso!'
-                })
+                body: JSON.stringify({ success: true, message: 'Confirmação enviada com sucesso!' })
             };
         }
 
