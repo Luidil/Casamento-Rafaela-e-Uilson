@@ -18,9 +18,13 @@ document.addEventListener('DOMContentLoaded', () => {
         setTimeout(() => {
             const fileInput = document.getElementById('fileInput');
             if (fileInput) {
-                fileInput.click();
+                // Scroll para a seção de fotos primeiro
+                const fotosSection = document.getElementById('fotos');
+                if (fotosSection) fotosSection.scrollIntoView({ behavior: 'smooth' });
+                // Abre o seletor de arquivos
+                setTimeout(() => fileInput.click(), 500);
             }
-        }, 800);
+        }, 1000);
     }
 });
 
@@ -318,10 +322,10 @@ function initPhotoShareQr() {
     
     if (!canvas) return;
 
-    // URL completa da seção de fotos
-    const shareUrl = window.location.origin + window.location.pathname + '#fotos';
+    // URL completa com #fotos para abrir direto na seção
+    const shareUrl = window.location.origin + '/#fotos';
     
-    // Usar API do QR Server - mais confiável em todos os dispositivos
+    // Usar API do QR Server
     const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(shareUrl)}&color=8B5E4A&bgcolor=FAF7F2&margin=10`;
     
     const img = document.createElement('img');
@@ -329,11 +333,10 @@ function initPhotoShareQr() {
     img.style.cssText = 'width:250px;height:250px;border-radius:12px;display:block;margin:0 auto;';
     img.alt = 'QR Code para compartilhar fotos';
     
-    // Fallback se a imagem não carregar
     img.onerror = () => {
         const fallback = document.createElement('div');
         fallback.style.cssText = 'width:250px;height:250px;display:flex;align-items:center;justify-content:center;background:#FAF7F2;border-radius:12px;border:2px dashed #C9A27E;margin:0 auto;text-align:center;padding:20px;box-sizing:border-box;';
-        fallback.innerHTML = `<div><p style="color:#8B5E4A;font-size:0.9rem;margin:0">📸 Acesse a seção de fotos para compartilhar</p><p style="color:#C9A27E;font-size:0.75rem;margin-top:8px">${shareUrl}</p></div>`;
+        fallback.innerHTML = `<div><p style="color:#8B5E4A;font-size:0.9rem;margin:0">📸 Acesse a seção de fotos para compartilhar</p></div>`;
         canvas.parentNode.replaceChild(fallback, canvas);
     };
     
