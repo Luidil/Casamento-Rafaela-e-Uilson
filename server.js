@@ -15,21 +15,17 @@ const QRCode = require('qrcode');
 const nodemailer = require('nodemailer');
 
 // Configuração do PostgreSQL
+const connectionString = process.env.DATABASE_URL || `postgresql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`;
+
 const db = new Client({
-    host: process.env.DB_HOST || 'localhost',
-    port: process.env.DB_PORT || 5432,
-    database: process.env.DB_NAME || 'casamento_db',
-    user: process.env.DB_USER || 'casamento_user',
-    password: process.env.DB_PASSWORD || ''
+    connectionString: connectionString,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
 });
 
 db.connect((err) => {
     if (err) {
         console.error('❌ Erro ao conectar ao PostgreSQL:', err.message);
-        console.error('Host:', process.env.DB_HOST);
-        console.error('Port:', process.env.DB_PORT);
-        console.error('Database:', process.env.DB_NAME);
-        console.error('User:', process.env.DB_USER);
+        console.error('Connection String:', connectionString.replace(/:[^:]*@/, ':***@'));
     } else {
         console.log('✅ Conectado ao PostgreSQL');
         initializeDatabase();
