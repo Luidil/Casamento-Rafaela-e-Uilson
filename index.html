@@ -12,10 +12,40 @@
 <body>
     <!-- Hero Section -->
     <header class="hero" id="home">
-        <div class="hero-content">
-            <p class="save-the-date">Save the Date</p>
-            <h1 class="couple-names">Uilson & Rafaela</h1>
-            <p class="wedding-date">01 de Setembro de 2026</p>
+        <div class="hero-wrapper">
+            <div class="hero-content">
+                <p class="save-the-date">Save the Date</p>
+                <h1 class="couple-names">Uilson & Rafaela</h1>
+                <p class="wedding-date">01 de Setembro de 2026</p>
+                <div class="countdown" id="countdown">
+                    <div class="countdown-item">
+                        <span class="countdown-number" id="days">0</span>
+                        <span class="countdown-label">Dias</span>
+                    </div>
+                    <div class="countdown-item">
+                        <span class="countdown-number" id="hours">0</span>
+                        <span class="countdown-label">Horas</span>
+                    </div>
+                    <div class="countdown-item">
+                        <span class="countdown-number" id="minutes">0</span>
+                        <span class="countdown-label">Minutos</span>
+                    </div>
+                    <div class="countdown-item">
+                        <span class="countdown-number" id="seconds">0</span>
+                        <span class="countdown-label">Segundos</span>
+                    </div>
+                </div>
+            </div>
+            <div class="hero-carousel">
+                <div class="carousel-container">
+                    <div class="carousel-slide active">
+                        <img src="" alt="Foto do casal" class="carousel-image">
+                    </div>
+                </div>
+                <button class="carousel-btn carousel-prev" id="prevBtn">❮</button>
+                <button class="carousel-btn carousel-next" id="nextBtn">❯</button>
+                <div class="carousel-dots" id="carouselDots"></div>
+            </div>
         </div>
     </header>
 
@@ -45,7 +75,7 @@
             </div>
             <div class="map-container">
                 <iframe 
-                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3775.6!2d-38.3!3d-12.9!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x7164e1e4a1c1c4d%3A0x0!2sAv.%20Praia%20de%20Itapu%C3%A3%2C%20Vilas%20do%20Atl%C3%A2ntico%2C%20Lauro%20de%20Freitas%20-%20BA!5e0!3m2!1spt-BR!2sbr!4v1620000000000!5m2!1spt-BR!2sbr" 
+                    src="https://www.google.com/maps/embed?pb=!1m18!1m12!1m3!1d3775.6!2d-38.3029679!3d-12.8829722!2m3!1f0!2f0!3f0!3m2!1i1024!2i768!4f13.1!3m3!1m2!1s0x7163e0906fd3f49:0x1e3df251ac81a200!2sRestaurante%20Donana%20-%20Villas%20do%20Atl%C3%A2ntico!5e0!3m2!1spt-BR!2sbr!4v1620000000000!5m2!1spt-BR!2sbr" 
                     width="100%" 
                     height="400" 
                     style="border:0;" 
@@ -70,13 +100,13 @@
                 </div>
                 
                 <div class="form-group">
-                    <label for="email">E-mail</label>
-                    <input type="email" id="email" name="email" required>
+                    <label for="email">E-mail (opcional)</label>
+                    <input type="email" id="email" name="email">
                 </div>
                 
                 <div class="form-group">
-                    <label>Você estará presente?</label>
-                    <div class="radio-group">
+                    <label class="presenca-label">Você estará presente?</label>
+                    <div class="radio-group radio-group-horizontal">
                         <label class="radio-label">
                             <input type="radio" name="presenca" value="sim" required>
                             <span class="radio-custom"></span>
@@ -112,7 +142,7 @@
     <section class="section" id="dresscode">
         <div class="container">
             <h2 class="section-title">Dress Code</h2>
-            <p class="dresscode-intro">Para um casamento durante a tarde, sugerimos producoes elegantes, leves e alegres, com conforto e sofisticacao na medida certa.</p>
+            <p class="dresscode-intro">Para um casamento durante a tarde, sugerimos produções elegantes, leves e alegres, com conforto e sofisticação na medida certa.</p>
             <p class="section-subtitle">Recomendamos a adoção desta paleta de cores, cuidadosamente selecionada para transmitir harmonia, elegância e equilíbrio visual:</p>
             
             <div class="dresscode-container">
@@ -124,17 +154,6 @@
                     </div>
                     <h3>Homens</h3>
                     <p class="dresscode-description">Traje casual-formal ou esporte fino, bem arrumado e sem excessos.</p>
-                    <ul class="dresscode-list">
-                        <li><strong>Evite formalidade excessiva:</strong> nao e necessario terno completo nem gravata borboleta, salvo orientacao especifica.</li>
-                        <li><strong>Pecas-chave:</strong> camisas sociais coloridas em tons neutros ou pasteis, com calcas de sarja ou linho em bege, marinho ou cinza.</li>
-                        <li><strong>Toque final:</strong> sapatos sociais ou mocassins, com blazer opcional, relogio elegante e cinto coordenado.</li>
-                    </ul>
-                    <div class="color-suggestions">
-                        <span class="color-dot" style="background-color: #3E5C58;"></span>
-                        <span class="color-dot" style="background-color: #786B59;"></span>
-                        <span class="color-dot" style="background-color: #1a1a1a;"></span>
-                        <span class="color-dot" style="background-color: #2c3e50;"></span>
-                    </div>
                 </div>
                 
                 <div class="dresscode-card">
@@ -145,17 +164,6 @@
                     </div>
                     <h3>Mulheres</h3>
                     <p class="dresscode-description">Looks elegantes e leves para a tarde, com cor, movimento e personalidade.</p>
-                    <ul class="dresscode-list">
-                        <li><strong>Aposte em cores vibrantes e estampas:</strong> tons alegres e estampas florais sao otimas escolhas para o horario do evento.</li>
-                        <li><strong>Comprimentos variados:</strong> vestidos midi ou curtos, sem exageros, sao ideais. Macacao ou calca de alfaiataria com blusa elegante tambem funcionam muito bem.</li>
-                        <li><strong>Acessorios:</strong> brincos, colares e cintos podem dar o toque final e valorizar a producao.</li>
-                    </ul>
-                    <div class="color-suggestions">
-                        <span class="color-dot" style="background-color: #E8DED4;"></span>
-                        <span class="color-dot" style="background-color: #BFA98A;"></span>
-                        <span class="color-dot" style="background-color: #3E5C58;"></span>
-                        <span class="color-dot" style="background-color: #c9a959;"></span>
-                    </div>
                 </div>
             </div>
             
@@ -174,12 +182,11 @@
             
             <div class="upload-share-card" id="uploadShareCard">
                 <div class="qr-code-content">
-                    <span class="qr-code-badge">PDF</span>
-                    <h3>Baixe o QR Code em PDF</h3>
-                    <p>Use o arquivo para imprimir ou compartilhar com os convidados.</p>
+                    <h3>Compartilhe Seus Momentos</h3>
+                    <p>Escaneie o QR Code para compartilhar as fotos e acessar a galeria</p>
 
-                    <div class="share-actions">
-                        <a class="btn btn-primary" id="downloadQrPdfBtn" href="#">Baixar PDF</a>
+                    <div class="qr-code-wrapper">
+                        <canvas id="qrCodeCanvas" width="250" height="250"></canvas>
                     </div>
                 </div>
             </div>
@@ -203,7 +210,10 @@
             </div>
             
             <div class="uploaded-files" id="uploadedFiles">
-                <h3>Fotos Enviadas</h3>
+                <div style="display: flex; flex-direction: column; align-items: center; gap: 15px; margin-bottom: 20px;">
+                    <h3 style="margin: 0;">Fotos Enviadas</h3>
+                    <button class="btn btn-outline" id="downloadAllPhotosBtn" style="display: none; font-size: 0.9rem; padding: 8px 16px;">📸 Baixar Todas</button>
+                </div>
                 <div class="files-grid" id="filesGrid"></div>
             </div>
         </div>
@@ -218,5 +228,39 @@
     </footer>
 
     <script src="script.js"></script>
+
+    <!-- Modal de Confirmação -->
+    <div class="modal" id="confirmModal" style="display: none;">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h2>Confirmar Remoção</h2>
+                <button class="modal-close" id="modalClose">&times;</button>
+            </div>
+            <div class="modal-body">
+                <p>Tem certeza que deseja remover esta foto?</p>
+            </div>
+            <div class="modal-footer">
+                <button class="btn btn-outline" id="modalCancel">Cancelar</button>
+                <button class="btn btn-primary" id="modalConfirm">Remover</button>
+            </div>
+        </div>
+    </div>
+    <div class="modal-overlay" id="modalOverlay" style="display: none;"></div>
+
+    <!-- Modal de Visualização de Foto -->
+    <div class="modal modal-large" id="viewModal" style="display: none;">
+        <div class="modal-content modal-view-content">
+            <button class="modal-close modal-view-close" id="viewModalClose">&times;</button>
+            <button class="modal-download-btn" id="viewModalDownload" title="Baixar">⬇️</button>
+            <div class="modal-view-body">
+                <img id="viewModalImage" src="" alt="Foto ampliada" class="modal-view-image">
+                <video id="viewModalVideo" class="modal-view-video" controls style="display: none;"></video>
+            </div>
+            <div style="text-align: center; padding: 15px; background: #f5ede3; border-top: 1px solid #e6d3c1; font-size: 0.9rem; color: #666;">
+                💡 Dica: Clique na imagem para ampliar ou use o botão ⬇️ para baixar
+            </div>
+        </div>
+    </div>
+    <div class="modal-overlay" id="viewModalOverlay" style="display: none;"></div>
 </body>
 </html>

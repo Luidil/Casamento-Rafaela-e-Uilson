@@ -1,34 +1,312 @@
 /**
  * Servidor Local - Site de Casamento
  * Execute: node server.js
- * Banco: PostgreSQL
+ * Banco: SQLite (casamento.db)
  */
 
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
-const { Pool } = require('pg');
+const sqlite3 = require('sqlite3').verbose();
 const multiparty = require('multiparty');
 const PDFDocument = require('pdfkit');
 const QRCode = require('qrcode');
+const nodemailer = require('nodemailer');
 
-// Configuração do PostgreSQL
-const pool = new Pool({
-    host: process.env.DB_HOST || 'localhost',
-    port: Number(process.env.DB_PORT || 5433),
-    database: process.env.DB_NAME || 'casamento_db',
-    user: process.env.DB_USER || 'casamento_user',
-    password: process.env.DB_PASSWORD || '',
-    max: 20,
-    idleTimeoutMillis: 30000,
-    connectionTimeoutMillis: 2000,
+// Configuração do SQLite
+const db = new sqlite3.Database(path.join(__dirname, 'casamento.db'), (err) => {
+    if (err) {
+        console.error('❌ Erro ao conectar ao SQLite:', err.message);
+    } else {
+        console.log('✅ Conectado ao SQLite (casamento.db)');
+        initializeDatabase();
+    }
 });
 
-// Testar conexão
-pool.query('SELECT NOW()')
-    .then(() => console.log('✅ Conectado ao PostgreSQL'))
-    .catch(err => console.error('❌ Erro ao conectar:', err.message));
+// Inicializar banco de dados com todas as tabelas
+function initializeDatabase() {
+    db.serialize(() => {
+        // Tabela de convidados
+        db.run(`
+            CREATE TABLE IF NOT EXISTS convidados (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome TEXT NOT NULL,
+                email TEXT NOT NULL UNIQUE,
+                presenca BOOLEAN NOT NULL,
+                mensagem TEXT,
+                foto_url TEXT,
+                data_confirmacao DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `, (err) => {
+            if (err) console.error('❌ Erro ao criar tabela convidados:', err.message);
+            else console.log('✅ Tabela convidados pronta');
+        });
+
+        // Tabela de fotos
+        db.run(`
+            CREATE TABLE IF NOT EXISTS fotos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome_original TEXT NOT NULL,
+                nome_arquivo TEXT NOT NULL,
+                tipo_arquivo TEXT NOT NULL,
+                tamanho INTEGER NOT NULL,
+                url TEXT NOT NULL,
+                id_convidado INTEGER,
+                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(id_convidado) REFERENCES convidados(id) ON DELETE SET NULL
+            )
+        `, (err) => {
+            if (err) console.error('❌ Erro ao criar tabela fotos:', err.message);
+            else console.log('✅ Tabela fotos pronta');
+        });
+
+        // Tabela de presentes
+        db.run(`
+            CREATE TABLE IF NOT EXISTS presentes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome TEXT NOT NULL,
+                descricao TEXT,
+                categoria TEXT,
+                preco REAL,
+                link_compra TEXT,
+                imagem_url TEXT,
+                quantidade_total INTEGER DEFAULT 1,
+                quantidade_comprada INTEGER DEFAULT 0,
+                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+                atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `, (err) => {
+            if (err) console.error('❌ Erro ao criar tabela presentes:', err.message);
+            else console.log('✅ Tabela presentes pronta');
+        });
+
+        // Tabela de músicas
+        db.run(`
+            CREATE TABLE IF NOT EXISTS musicas (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                titulo TEXT NOT NULL,
+                artista TEXT NOT NULL,
+                solicitado_por TEXT,
+                id_convidado INTEGER,
+                observacoes TEXT,
+                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(id_convidado) REFERENCES convidados(id) ON DELETE SET NULL
+            )
+        `, (err) => {
+            if (err) console.error('❌ Erro ao criar tabela musicas:', err.message);
+            else console.log('✅ Tabela musicas pronta');
+        });
+
+        // Tabela de comentários
+        db.run(`
+            CREATE TABLE IF NOT EXISTS comentarios (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id_convidado INTEGER,
+                nome TEXT NOT NULL,
+                email TEXT NOT NULL,
+                mensagem TEXT NOT NULL,
+                aprovado BOOLEAN DEFAULT 0,
+                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(id_convidado) REFERENCES convidados(id) ON DELETE CASCADE
+            )
+        `, (err) => {
+            if (err) console.error('❌ Erro ao criar tabela comentarios:', err.message);
+            else console.log('✅ Tabela comentarios pronta');
+        });
+
+        // Tabela de galeria de fotos
+        db.run(`
+            CREATE TABLE IF NOT EXISTS galeria_fotos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                titulo TEXT NOT NULL,
+                descricao TEXT,
+                categoria TEXT,
+                ordem INTEGER DEFAULT 0,
+                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `, (err) => {
+            if (err) console.error('❌ Erro ao criar tabela galeria_fotos:', err.message);
+            else console.log('✅ Tabela galeria_fotos pronta');
+        });
+
+        // Tabela de fotos da galeria
+        db.run(`
+            CREATE TABLE IF NOT EXISTS fotos_galeria (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id_galeria INTEGER NOT NULL,
+                nome_original TEXT NOT NULL,
+                nome_arquivo TEXT NOT NULL,
+                tipo_arquivo TEXT NOT NULL,
+                tamanho INTEGER NOT NULL,
+                url TEXT NOT NULL,
+                ordem INTEGER DEFAULT 0,
+                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(id_galeria) REFERENCES galeria_fotos(id) ON DELETE CASCADE
+            )
+        `, (err) => {
+            if (err) console.error('❌ Erro ao criar tabela fotos_galeria:', err.message);
+            else console.log('✅ Tabela fotos_galeria pronta');
+        });
+
+        // Tabela de fotos dos convidados
+        db.run(`
+            CREATE TABLE IF NOT EXISTS fotos_convidados (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id_convidado INTEGER NOT NULL,
+                nome_original TEXT NOT NULL,
+                nome_arquivo TEXT NOT NULL,
+                tipo_arquivo TEXT NOT NULL,
+                tamanho INTEGER NOT NULL,
+                url TEXT NOT NULL,
+                aprovado BOOLEAN DEFAULT 0,
+                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(id_convidado) REFERENCES convidados(id) ON DELETE CASCADE
+            )
+        `, (err) => {
+            if (err) console.error('❌ Erro ao criar tabela fotos_convidados:', err.message);
+            else console.log('✅ Tabela fotos_convidados pronta');
+        });
+
+        // Tabela de cronograma
+        db.run(`
+            CREATE TABLE IF NOT EXISTS cronograma (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                horario TEXT NOT NULL,
+                evento TEXT NOT NULL,
+                descricao TEXT,
+                local TEXT,
+                ordem INTEGER DEFAULT 0,
+                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `, (err) => {
+            if (err) console.error('❌ Erro ao criar tabela cronograma:', err.message);
+            else console.log('✅ Tabela cronograma pronta');
+        });
+
+        // Tabela de hospedagem
+        db.run(`
+            CREATE TABLE IF NOT EXISTS hospedagem (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome TEXT NOT NULL,
+                tipo TEXT,
+                endereco TEXT,
+                telefone TEXT,
+                email TEXT,
+                website TEXT,
+                descricao TEXT,
+                preco_aproximado TEXT,
+                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `, (err) => {
+            if (err) console.error('❌ Erro ao criar tabela hospedagem:', err.message);
+            else console.log('✅ Tabela hospedagem pronta');
+        });
+
+        // Tabela de transporte
+        db.run(`
+            CREATE TABLE IF NOT EXISTS transporte (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tipo TEXT,
+                saida_local TEXT,
+                saida_horario TEXT,
+                destino_local TEXT,
+                destino_horario TEXT,
+                capacidade INTEGER,
+                observacoes TEXT,
+                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `, (err) => {
+            if (err) console.error('❌ Erro ao criar tabela transporte:', err.message);
+            else console.log('✅ Tabela transporte pronta');
+        });
+
+        // Tabela de logs
+        db.run(`
+            CREATE TABLE IF NOT EXISTS logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tipo_acao TEXT NOT NULL,
+                descricao TEXT,
+                id_convidado INTEGER,
+                ip_address TEXT,
+                user_agent TEXT,
+                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(id_convidado) REFERENCES convidados(id) ON DELETE SET NULL
+            )
+        `, (err) => {
+            if (err) console.error('❌ Erro ao criar tabela logs:', err.message);
+            else console.log('✅ Tabela logs pronta');
+        });
+
+        // Tabela de configurações
+        db.run(`
+            CREATE TABLE IF NOT EXISTS configuracoes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                chave TEXT NOT NULL UNIQUE,
+                valor TEXT NOT NULL,
+                descricao TEXT,
+                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+                atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `, (err) => {
+            if (err) console.error('❌ Erro ao criar tabela configuracoes:', err.message);
+            else console.log('✅ Tabela configuracoes pronta');
+        });
+
+        // Criar índices
+        db.run('CREATE INDEX IF NOT EXISTS ix_convidados_email ON convidados(email)');
+        db.run('CREATE INDEX IF NOT EXISTS ix_convidados_presenca ON convidados(presenca)');
+        db.run('CREATE INDEX IF NOT EXISTS ix_fotos_convidado ON fotos(id_convidado)');
+        db.run('CREATE INDEX IF NOT EXISTS ix_fotos_galeria_id ON fotos_galeria(id_galeria)');
+    });
+}
+
+// Configuração do Nodemailer
+const transporter = nodemailer.createTransport({
+    service: process.env.EMAIL_SERVICE || 'gmail',
+    auth: {
+        user: process.env.EMAIL_USER,
+        pass: process.env.EMAIL_PASSWORD
+    }
+});
+
+// Testar conexão de email
+if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) {
+    transporter.verify((error, success) => {
+        if (error) {
+            console.warn('⚠️ Email não configurado:', error.message);
+        } else {
+            console.log('✅ Email configurado com sucesso');
+        }
+    });
+}
+
+// Função auxiliar para executar queries com SQLite
+function executeQuery(sql, params = []) {
+    return new Promise((resolve, reject) => {
+        const isSelect = sql.trim().toUpperCase().startsWith('SELECT');
+        
+        if (isSelect) {
+            db.all(sql, params, (err, rows) => {
+                if (err) {
+                    console.error('❌ Erro na query SELECT:', err.message);
+                    reject(err);
+                } else {
+                    resolve({ rows: rows || [] });
+                }
+            });
+        } else {
+            db.run(sql, params, function(err) {
+                if (err) {
+                    console.error('❌ Erro na query:', err.message);
+                    reject(err);
+                } else {
+                    resolve({ lastID: this.lastID, changes: this.changes });
+                }
+            });
+        }
+    });
+}
 
 const PORT = 5500;
 const BASE_DIR = __dirname;
@@ -143,53 +421,152 @@ async function handleConfirmacao(data) {
             return { success: false, message: 'Dados incompletos' };
         }
 
-        const presencaValue = presenca === 'sim';
+        const presencaValue = presenca === 'sim' ? 1 : 0;
         const msgValue = mensagem || null;
         const fotoValue = fotoUrl || null;
 
         // Verificar se já existe
-        const existing = await pool.query('SELECT id FROM convidados WHERE email = $1', [email]);
+        const existing = await executeQuery('SELECT id FROM convidados WHERE email = ?', [email]);
         
         if (existing.rows.length > 0) {
             // Atualizar existente
-            await pool.query(`
+            await executeQuery(`
                 UPDATE convidados 
-                SET nome = $1, presenca = $2, mensagem = $3, foto_url = COALESCE($4, foto_url), data_confirmacao = NOW()
-                WHERE email = $5
+                SET nome = ?, presenca = ?, mensagem = ?, foto_url = COALESCE(?, foto_url), data_confirmacao = CURRENT_TIMESTAMP
+                WHERE email = ?
             `, [nome, presencaValue, msgValue, fotoValue, email]);
+            
+            // Enviar email se confirmou presença
+            if (presencaValue) {
+                await enviarEmailConfirmacao(nome, email);
+            }
             
             return { success: true, message: 'Confirmação atualizada!' };
         } else {
             // Inserir novo
-            await pool.query(`
+            await executeQuery(`
                 INSERT INTO convidados (nome, email, presenca, mensagem, foto_url)
-                VALUES ($1, $2, $3, $4, $5)
+                VALUES (?, ?, ?, ?, ?)
             `, [nome, email, presencaValue, msgValue, fotoValue]);
+            
+            // Enviar email se confirmou presença
+            if (presencaValue) {
+                await enviarEmailConfirmacao(nome, email);
+            }
             
             return { success: true, message: 'Confirmação enviada com sucesso!' };
         }
     } catch (error) {
-        console.error('Erro ao salvar:', error);
-        return { success: false, message: 'Erro ao salvar dados' };
+        console.error('❌ Erro ao salvar:', error.message);
+        return { success: false, message: 'Erro ao salvar dados: ' + error.message };
+    }
+}
+
+// Função para enviar email de confirmação
+async function enviarEmailConfirmacao(nome, email) {
+    try {
+        // Verificar se email está configurado
+        if (!process.env.EMAIL_USER || !process.env.EMAIL_PASSWORD) {
+            console.log('⚠️ Email não configurado, pulando envio');
+            return;
+        }
+        
+        // Pega uma foto aleatória da pasta Fotos
+        const fotosDir = path.join(__dirname, 'Fotos');
+        const fotos = fs.readdirSync(fotosDir).filter(f => 
+            f.match(/\.(jpg|jpeg|png|gif)$/i)
+        );
+        
+        if (fotos.length === 0) {
+            console.warn('Nenhuma foto encontrada na pasta Fotos');
+            return;
+        }
+        
+        const fotoAleatoria = fotos[Math.floor(Math.random() * fotos.length)];
+        const caminhoFoto = path.join(fotosDir, fotoAleatoria);
+        
+        const htmlEmail = `
+            <!DOCTYPE html>
+            <html lang="pt-BR">
+            <head>
+                <meta charset="UTF-8">
+                <style>
+                    body { font-family: Arial, sans-serif; background-color: #f5ede3; margin: 0; padding: 20px; }
+                    .container { max-width: 600px; margin: 0 auto; background-color: #ffffff; border-radius: 10px; overflow: hidden; box-shadow: 0 4px 20px rgba(139, 94, 74, 0.1); }
+                    .header { background: linear-gradient(135deg, #8B5E4A 0%, #C9A27E 100%); color: white; padding: 40px 20px; text-align: center; }
+                    .header h1 { margin: 0; font-size: 2.5em; font-family: 'Cormorant Garamond', serif; }
+                    .header p { margin: 10px 0 0 0; font-size: 1.1em; opacity: 0.9; }
+                    .content { padding: 40px 20px; text-align: center; }
+                    .foto { max-width: 100%; height: auto; border-radius: 10px; margin: 20px 0; }
+                    .mensagem { font-size: 1.1em; color: #2D2D2D; line-height: 1.8; margin: 20px 0; }
+                    .destaque { color: #8B5E4A; font-weight: bold; }
+                    .footer { background-color: #f5ede3; padding: 20px; text-align: center; font-size: 0.9em; color: #666; }
+                    .btn { display: inline-block; background-color: #8B5E4A; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin-top: 20px; }
+                </style>
+            </head>
+            <body>
+                <div class="container">
+                    <div class="header">
+                        <h1>Uilson & Rafaela</h1>
+                        <p>01 de Setembro de 2026</p>
+                    </div>
+                    <div class="content">
+                        <h2 style="color: #8B5E4A; font-family: 'Cormorant Garamond', serif;">Obrigado, ${nome}!</h2>
+                        <img src="cid:foto" alt="Casal" class="foto" style="max-width: 400px;">
+                        <div class="mensagem">
+                            <p>Que alegria saber que você estará conosco neste momento tão especial!</p>
+                            <p>Sua presença é muito importante para nós. <span class="destaque">Esperamos você lá</span> para compartilharmos juntos este dia inesquecível.</p>
+                            <p><span class="destaque">Obrigado por aceitar viver esse momento lindo</span> ao nosso lado. Sua companhia tornará este dia ainda mais especial.</p>
+                            <p style="margin-top: 30px; font-style: italic; color: #8B5E4A;">Com amor,<br>Uilson & Rafaela</p>
+                        </div>
+                        <a href="http://localhost:5500" class="btn" style="display: inline-block; background-color: #8B5E4A; color: white; padding: 12px 30px; text-decoration: none; border-radius: 5px; margin-top: 20px;">Voltar ao Site</a>
+                    </div>
+                    <div class="footer">
+                        <p>Este é um email automático. Por favor, não responda.</p>
+                    </div>
+                </div>
+            </body>
+            </html>
+        `;
+        
+        const mailOptions = {
+            from: process.env.EMAIL_FROM || 'noreply@casamento.com',
+            to: email,
+            subject: 'Confirmação de Presença - Casamento Uilson & Rafaela',
+            html: htmlEmail,
+            attachments: [
+                {
+                    filename: fotoAleatoria,
+                    path: caminhoFoto,
+                    cid: 'foto'
+                }
+            ]
+        };
+        
+        await transporter.sendMail(mailOptions);
+        console.log(`✅ Email enviado para ${email}`);
+    } catch (error) {
+        console.error('⚠️ Erro ao enviar email (continuando mesmo assim):', error.message);
+        // Não interrompe o fluxo se o email falhar
     }
 }
 
 // API: Listar confirmações
 async function handleListarConfirmacoes() {
     try {
-        const result = await pool.query(`
-            SELECT * FROM convidados WHERE presenca = true ORDER BY data_confirmacao DESC
+        const result = await executeQuery(`
+            SELECT * FROM convidados WHERE presenca = 1 ORDER BY data_confirmacao DESC
         `);
         
-        const total = await pool.query('SELECT COUNT(*) as count FROM convidados');
+        const total = await executeQuery('SELECT COUNT(*) as count FROM convidados');
         
         return { 
             success: true, 
             confirmados: result.rows,
-            total: parseInt(total.rows[0].count)
+            total: total.rows[0]?.count || 0
         };
     } catch (error) {
-        console.error('Erro ao listar:', error);
+        console.error('❌ Erro ao listar:', error.message);
         return { success: false, message: 'Erro ao buscar dados' };
     }
 }
@@ -197,20 +574,20 @@ async function handleListarConfirmacoes() {
 // API: Listar todos os convidados (admin)
 async function handleListarTodosConvidados() {
     try {
-        const result = await pool.query(`
+        const result = await executeQuery(`
             SELECT id, nome, email, presenca, mensagem, foto_url, data_confirmacao 
             FROM convidados ORDER BY data_confirmacao DESC
         `);
         
-        const confirmados = result.rows.filter(c => c.presenca === true);
-        const recusados = result.rows.filter(c => c.presenca === false);
+        const confirmados = result.rows.filter(c => c.presenca === 1);
+        const recusados = result.rows.filter(c => c.presenca === 0);
         
         return { 
             success: true, 
             confirmados: confirmados.map(c => ({
                 Nome: c.nome,
                 Email: c.email,
-                Presenca: c.presenca ? 1 : 0,
+                Presenca: c.presenca,
                 Mensagem: c.mensagem,
                 FotoUrl: c.foto_url,
                 DataConfirmacao: c.data_confirmacao
@@ -218,7 +595,7 @@ async function handleListarTodosConvidados() {
             recusados: recusados.map(c => ({
                 Nome: c.nome,
                 Email: c.email,
-                Presenca: c.presenca ? 1 : 0,
+                Presenca: c.presenca,
                 Mensagem: c.mensagem,
                 FotoUrl: c.foto_url,
                 DataConfirmacao: c.data_confirmacao
@@ -226,7 +603,7 @@ async function handleListarTodosConvidados() {
             total: result.rows.length
         };
     } catch (error) {
-        console.error('Erro ao listar:', error);
+        console.error('❌ Erro ao listar:', error.message);
         return { success: false, message: 'Erro ao buscar dados' };
     }
 }
@@ -306,6 +683,26 @@ const server = http.createServer(async (req, res) => {
             return;
         }
         
+        // GET /api/uploaded-files
+        if (req.method === 'GET' && req.url === '/api/uploaded-files') {
+            try {
+                const uploadsDir = path.join(__dirname, 'uploads');
+                const files = fs.readdirSync(uploadsDir).map(file => ({
+                    id: Date.now() + Math.random(),
+                    name: file,
+                    url: `/uploads/${file}`,
+                    type: file.match(/\.(mp4|webm|mov)$/i) ? 'video' : 'image'
+                }));
+                
+                res.writeHead(200);
+                res.end(JSON.stringify({ success: true, files }));
+            } catch (error) {
+                res.writeHead(200);
+                res.end(JSON.stringify({ success: true, files: [] }));
+            }
+            return;
+        }
+        
         // POST /api/upload
         if (req.method === 'POST' && req.url.startsWith('/api/upload')) {
             const contentType = req.headers['content-type'] || '';
@@ -315,7 +712,10 @@ const server = http.createServer(async (req, res) => {
                 return;
             }
             
-            const form = new multiparty.Form({ uploadDir: uploadsDir });
+            const form = new multiparty.Form({ 
+                uploadDir: uploadsDir,
+                maxFilesSize: 500 * 1024 * 1024 // 500MB por arquivo
+            });
             form.parse(req, (err, fields, files) => {
                 if (err) {
                     res.writeHead(400);
@@ -393,6 +793,9 @@ server.on('error', (err) => {
 
 // Fechar conexão ao parar
 process.on('SIGINT', () => {
-    pool.end();
-    process.exit();
+    db.close((err) => {
+        if (err) console.error('Erro ao fechar banco:', err);
+        else console.log('✅ Banco de dados fechado');
+        process.exit();
+    });
 });
