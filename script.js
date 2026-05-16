@@ -518,7 +518,22 @@ function initPhotoUpload() {
         };
         
         // Confirmar remoção
-        modalConfirm.onclick = () => {
+        modalConfirm.onclick = async () => {
+            const file = appState.uploadedFiles.find(f => f.id === fileId);
+            
+            // Deletar do Supabase Storage
+            if (file && file.name) {
+                try {
+                    await fetch('/.netlify/functions/upload', {
+                        method: 'DELETE',
+                        headers: { 'Content-Type': 'application/json' },
+                        body: JSON.stringify({ fileName: file.name })
+                    });
+                } catch (err) {
+                    console.error('Erro ao deletar do servidor:', err);
+                }
+            }
+            
             appState.uploadedFiles = appState.uploadedFiles.filter(f => f.id !== fileId);
             renderFiles();
             saveFilesToStorage();

@@ -9,7 +9,7 @@ const BUCKET = 'fotos-convidados';
 exports.handler = async (event, context) => {
     const headers = {
         'Access-Control-Allow-Origin': '*',
-        'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
+        'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
         'Access-Control-Allow-Headers': 'Content-Type',
         'Content-Type': 'application/json'
     };
@@ -19,6 +19,16 @@ exports.handler = async (event, context) => {
     }
 
     try {
+        if (event.httpMethod === 'DELETE') {
+            const { fileName } = JSON.parse(event.body);
+            if (!fileName) {
+                return { statusCode: 400, headers, body: JSON.stringify({ success: false, message: 'Nome do arquivo inválido' }) };
+            }
+            const { error } = await supabase.storage.from(BUCKET).remove([fileName]);
+            if (error) throw new Error(error.message);
+            return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
+        }
+
         if (event.httpMethod === 'POST') {
             const { fileName, fileData, fileType } = JSON.parse(event.body);
 
