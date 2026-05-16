@@ -177,26 +177,6 @@ function initializeDatabase() {
         });
     });
 }
-            CREATE TABLE IF NOT EXISTS configuracoes (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                chave TEXT NOT NULL UNIQUE,
-                valor TEXT NOT NULL,
-                descricao TEXT,
-                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-                atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        `, (err) => {
-            if (err) console.error('❌ Erro ao criar tabela configuracoes:', err.message);
-            else console.log('✅ Tabela configuracoes pronta');
-        });
-
-        // Criar índices
-        db.run('CREATE INDEX IF NOT EXISTS ix_convidados_email ON convidados(email)');
-        db.run('CREATE INDEX IF NOT EXISTS ix_convidados_presenca ON convidados(presenca)');
-        db.run('CREATE INDEX IF NOT EXISTS ix_fotos_convidado ON fotos(id_convidado)');
-        db.run('CREATE INDEX IF NOT EXISTS ix_fotos_galeria_id ON fotos_galeria(id_galeria)');
-    });
-}
 
 // Configuração do Nodemailer
 const transporter = nodemailer.createTransport({
