@@ -285,10 +285,10 @@ function initRSVPForm() {
 }
 
 /**
- * Envia os dados para a API
+ * Envia os dados para a API (Netlify Function)
  */
 async function simulateRSVPSubmit(data) {
-    const response = await fetch('/api/confirmacao', {
+    const response = await fetch('/.netlify/functions/confirmacao', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
@@ -402,7 +402,7 @@ function initPhotoUpload() {
             const formData = new FormData();
             formData.append('file', file);
             
-            const response = await fetch('https://casamento-rafaela-e-uilson.vercel.app/api/upload', {
+            const response = await fetch('/.netlify/functions/upload', {
                 method: 'POST',
                 body: formData
             });
@@ -579,7 +579,7 @@ function initPhotoUpload() {
     function loadFilesFromStorage() {
         try {
             // Carrega as fotos do servidor via API
-            fetch('https://casamento-rafaela-e-uilson.vercel.app/api/uploaded-files')
+            fetch('/.netlify/functions/uploaded-files')
                 .then(res => res.json())
                 .then(data => {
                     if (data.success && data.files) {
