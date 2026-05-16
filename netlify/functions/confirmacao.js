@@ -1,12 +1,8 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
 const nodemailer = require('nodemailer');
-const fs = require('fs');
 
-// Banco de dados SQLite - usar diretório do projeto
-const dbPath = path.join(process.cwd(), 'casamento.db');
-
-const db = new sqlite3.Database(dbPath);
+// ID da Google Sheet
+const SHEET_ID = '1RTxxXaK4P0EswifIkob5YcdX6PzVAOK7EncuN_8GbPM';
+const SHEET_NAME = 'Sheet1';
 
 // Configurar email
 const transporter = nodemailer.createTransport({
@@ -16,26 +12,6 @@ const transporter = nodemailer.createTransport({
         pass: process.env.EMAIL_PASSWORD
     }
 });
-
-// Inicializar banco
-function initDB() {
-    return new Promise((resolve) => {
-        db.serialize(() => {
-            db.run(`
-                CREATE TABLE IF NOT EXISTS convidados (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    nome TEXT NOT NULL,
-                    email TEXT NOT NULL UNIQUE,
-                    presenca BOOLEAN NOT NULL,
-                    mensagem TEXT,
-                    foto_url TEXT,
-                    data_confirmacao DATETIME DEFAULT CURRENT_TIMESTAMP
-                )
-            `);
-            resolve();
-        });
-    });
-}
 
 // Enviar email
 async function enviarEmailConfirmacao(nome, email) {
@@ -98,8 +74,73 @@ async function enviarEmailConfirmacao(nome, email) {
     }
 }
 
+// Buscar dados da Google Sheet
+async function getConvidados() {
+    try {
+        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+        const response = await fetch(url);
+        const text = await response.text();
+        
+        // Remove o prefixo da resposta
+        const jsonStr = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
+        const data = JSON.parse(jsonStr);
+        
+        const convidados = [];
+        if (data.table && data.table.rows) {
+            data.table.rows.forEach((row, index) => {
+                if (index === 0) return; // Pula header
+                convidados.push({
+                    id: row.c[0]?.v || index,
+                    nome: row.c[1]?.v || '',
+                    email: row.c[2]?.v || '',
+                    presenca: row.c[3]?.v === 'sim' || row.c[3]?.v === true,
+                    mensagem: row.c[4]?.v || '',
+                    data_confirmacao: row.c[5]?.v || new Date().toISOString()
+                });
+            });
+        }
+        
+        return convidados;
+    } catch (error) {
+        console.error('Erro ao buscar dados:', error);
+        return [];
+    }
+}
+
+// Adicionar/atualizar convidado na Google Sheet via Apps Script
+async function salvarConvidado(nome, email, presenca, mensagem) {
+    try {
+        const scriptUrl = process.env.GOOGLE_APPS_SCRIPT_URL;
+        
+        if (!scriptUrl) {
+            console.warn('GOOGLE_APPS_SCRIPT_URL não configurada');
+            return false;
+        }
+        
+        const response = await fetch(scriptUrl, {
+            method: 'POST',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({
+                nome,
+                email,
+                presenca,
+                mensagem
+            })
+        });
+        
+        const result = await response.json();
+        console.log('Resposta do Apps Script:', result);
+        
+        return result.success;
+    } catch (error) {
+        console.error('Erro ao salvar na Google Sheet:', error);
+        throw error;
+    }
+}
+
 exports.handler = async (event, context) => {
-    // CORS
     const headers = {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, OPTIONS',
@@ -112,8 +153,6 @@ exports.handler = async (event, context) => {
     }
 
     try {
-        await initDB();
-
         if (event.httpMethod === 'POST') {
             const data = JSON.parse(event.body);
             const { nome, email, presenca, mensagem } = data;
@@ -126,45 +165,24 @@ exports.handler = async (event, context) => {
                 };
             }
 
-            const presencaValue = presenca === 'sim' || presenca === true ? 1 : 0;
+            const presencaValue = presenca === 'sim' || presenca === true ? 'sim' : 'não';
 
-            return new Promise((resolve) => {
-                db.get('SELECT id FROM convidados WHERE email = ?', [email], (err, row) => {
-                    if (row) {
-                        // Atualizar
-                        db.run(
-                            'UPDATE convidados SET nome = ?, presenca = ?, mensagem = ?, data_confirmacao = CURRENT_TIMESTAMP WHERE email = ?',
-                            [nome, presencaValue, mensagem || null, email],
-                            async (err) => {
-                                if (presencaValue) {
-                                    await enviarEmailConfirmacao(nome, email);
-                                }
-                                resolve({
-                                    statusCode: 200,
-                                    headers,
-                                    body: JSON.stringify({ success: true, message: 'Confirmação atualizada!' })
-                                });
-                            }
-                        );
-                    } else {
-                        // Inserir
-                        db.run(
-                            'INSERT INTO convidados (nome, email, presenca, mensagem) VALUES (?, ?, ?, ?)',
-                            [nome, email, presencaValue, mensagem || null],
-                            async (err) => {
-                                if (presencaValue) {
-                                    await enviarEmailConfirmacao(nome, email);
-                                }
-                                resolve({
-                                    statusCode: 200,
-                                    headers,
-                                    body: JSON.stringify({ success: true, message: 'Confirmação enviada com sucesso!' })
-                                });
-                            }
-                        );
-                    }
-                });
-            });
+            // Salvar na Google Sheet
+            await salvarConvidado(nome, email, presencaValue, mensagem);
+
+            // Enviar email se confirmou presença
+            if (presencaValue === 'sim') {
+                await enviarEmailConfirmacao(nome, email);
+            }
+
+            return {
+                statusCode: 200,
+                headers,
+                body: JSON.stringify({ 
+                    success: true, 
+                    message: 'Confirmação enviada com sucesso!'
+                })
+            };
         }
 
         return {
@@ -173,6 +191,7 @@ exports.handler = async (event, context) => {
             body: JSON.stringify({ success: false, message: 'Método não permitido' })
         };
     } catch (error) {
+        console.error('Erro:', error);
         return {
             statusCode: 500,
             headers,

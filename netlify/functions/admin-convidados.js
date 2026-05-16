@@ -1,30 +1,41 @@
-const sqlite3 = require('sqlite3').verbose();
-const path = require('path');
-const fs = require('fs');
+// ID da Google Sheet
+const SHEET_ID = '1RTxxXaK4P0EswifIkob5YcdX6PzVAOK7EncuN_8GbPM';
 
-// Banco de dados SQLite - usar diretório do projeto
-const dbPath = path.join(process.cwd(), 'casamento.db');
-
-const db = new sqlite3.Database(dbPath);
-
-// Inicializar banco
-function initDB() {
-    return new Promise((resolve) => {
-        db.serialize(() => {
-            db.run(`
-                CREATE TABLE IF NOT EXISTS convidados (
-                    id INTEGER PRIMARY KEY AUTOINCREMENT,
-                    nome TEXT NOT NULL,
-                    email TEXT NOT NULL UNIQUE,
-                    presenca BOOLEAN NOT NULL,
-                    mensagem TEXT,
-                    foto_url TEXT,
-                    data_confirmacao DATETIME DEFAULT CURRENT_TIMESTAMP
-                )
-            `);
-            resolve();
-        });
-    });
+// Buscar dados da Google Sheet
+async function getConvidados() {
+    try {
+        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
+        const response = await fetch(url);
+        const text = await response.text();
+        
+        // Remove o prefixo da resposta
+        const jsonStr = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
+        const data = JSON.parse(jsonStr);
+        
+        const convidados = [];
+        if (data.table && data.table.rows) {
+            data.table.rows.forEach((row, index) => {
+                if (index === 0) return; // Pula header
+                
+                const presencaRaw = row.c[3]?.v;
+                const presenca = presencaRaw === 'sim' || presencaRaw === true || presencaRaw === 1;
+                
+                convidados.push({
+                    Nome: row.c[1]?.v || '',
+                    Email: row.c[2]?.v || '',
+                    Presenca: presenca ? 1 : 0,
+                    Mensagem: row.c[4]?.v || '',
+                    FotoUrl: null,
+                    DataConfirmacao: row.c[5]?.v || new Date().toISOString()
+                });
+            });
+        }
+        
+        return convidados;
+    } catch (error) {
+        console.error('Erro ao buscar dados da Google Sheet:', error);
+        return [];
+    }
 }
 
 exports.handler = async (event, context) => {
@@ -40,47 +51,27 @@ exports.handler = async (event, context) => {
     }
 
     try {
-        await initDB();
-
         if (event.httpMethod === 'GET') {
-            return new Promise((resolve) => {
-                db.all('SELECT * FROM convidados ORDER BY data_confirmacao DESC', (err, rows) => {
-                    if (err) {
-                        resolve({
-                            statusCode: 500,
-                            headers,
-                            body: JSON.stringify({ success: false, message: err.message })
-                        });
-                        return;
-                    }
+            const convidados = await getConvidados();
+            const confirmados = convidados.filter(c => c.Presenca === 1);
+            const recusados = convidados.filter(c => c.Presenca === 0);
 
-                    const confirmados = rows.filter(r => r.presenca === 1);
-                    const recusados = rows.filter(r => r.presenca === 0);
-
-                    resolve({
-                        statusCode: 200,
-                        headers,
-                        body: JSON.stringify({
-                            success: true,
-                            confirmados: confirmados.map(c => ({
-                                Nome: c.nome,
-                                Email: c.email,
-                                Presenca: c.presenca,
-                                Mensagem: c.mensagem,
-                                DataConfirmacao: c.data_confirmacao
-                            })),
-                            recusados: recusados.map(c => ({
-                                Nome: c.nome,
-                                Email: c.email,
-                                Presenca: c.presenca,
-                                Mensagem: c.mensagem,
-                                DataConfirmacao: c.data_confirmacao
-                            })),
-                            total: rows.length
-                        })
-                    });
-                });
+            console.log('Retornando convidados:', { 
+                confirmados: confirmados.length, 
+                recusados: recusados.length, 
+                total: convidados.length 
             });
+
+            return {
+                statusCode: 200,
+                headers,
+                body: JSON.stringify({
+                    success: true,
+                    confirmados,
+                    recusados,
+                    total: convidados.length
+                })
+            };
         }
 
         return {
@@ -89,6 +80,7 @@ exports.handler = async (event, context) => {
             body: JSON.stringify({ success: false, message: 'Método não permitido' })
         };
     } catch (error) {
+        console.error('Erro:', error);
         return {
             statusCode: 500,
             headers,
