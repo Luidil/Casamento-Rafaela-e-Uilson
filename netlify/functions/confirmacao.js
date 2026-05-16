@@ -3,8 +3,9 @@ const path = require('path');
 const nodemailer = require('nodemailer');
 const fs = require('fs');
 
-// Banco de dados SQLite
-const dbPath = path.join('/tmp', 'casamento.db');
+// Banco de dados SQLite - usar diretório do projeto
+const dbPath = path.join(process.cwd(), 'casamento.db');
+
 const db = new sqlite3.Database(dbPath);
 
 // Configurar email

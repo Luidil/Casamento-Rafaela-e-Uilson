@@ -1,8 +1,10 @@
 const sqlite3 = require('sqlite3').verbose();
 const path = require('path');
+const fs = require('fs');
 
-// Banco de dados SQLite
-const dbPath = path.join('/tmp', 'casamento.db');
+// Banco de dados SQLite - usar diretório do projeto
+const dbPath = path.join(process.cwd(), 'casamento.db');
+
 const db = new sqlite3.Database(dbPath);
 
 // Inicializar banco
