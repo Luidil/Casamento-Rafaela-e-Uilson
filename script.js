@@ -12,6 +12,16 @@ document.addEventListener('DOMContentLoaded', () => {
     initPhotoUpload();
     initPhotoShareQr();
     initScrollEffects();
+
+    // Se veio do QR Code (#fotos), abre o seletor de arquivos automaticamente
+    if (window.location.hash === '#fotos') {
+        setTimeout(() => {
+            const fileInput = document.getElementById('fileInput');
+            if (fileInput) {
+                fileInput.click();
+            }
+        }, 800);
+    }
 });
 
 const appState = {
