@@ -7,7 +7,6 @@
     <link href="https://fonts.googleapis.com/css2?family=Cormorant+Garamond:wght@400;500;600;700&family=Montserrat:wght@300;400;500;600&display=swap" rel="stylesheet">
     <style>
         :root {
-            /* Primary Colors - Earth Tones */
             --bege-quente: #C9A27E;
             --marrom-caramelo: #8B5E4A;
             --nude-areia: #E6D3C1;
@@ -18,6 +17,7 @@
             --branco: #FFFFFF;
             --cinza-escuro: #2D2D2D;
             --cinza-medio: #666666;
+            --cinza-claro: #F0F0F0;
             --success: #4A7C59;
             --error: #A65D57;
         }
@@ -37,91 +37,111 @@
             font-weight: 400;
             line-height: 1.6;
             color: var(--cinza-escuro);
-            background-color: var(--creme);
+            background: linear-gradient(135deg, var(--creme) 0%, #f0e8e0 100%);
             min-height: 100vh;
         }
 
         /* Header */
         .admin-header {
             background: linear-gradient(135deg, var(--marrom-caramelo) 0%, var(--marrom-escuro) 100%);
-            padding: 50px 20px;
+            padding: 35px 20px;
             text-align: center;
             position: relative;
             overflow: hidden;
+            box-shadow: 0 10px 40px rgba(0,0,0,0.15);
         }
 
         .admin-header::before {
             content: '💍';
             position: absolute;
-            font-size: 200px;
-            opacity: 0.1;
+            font-size: 150px;
+            opacity: 0.08;
             top: 50%;
             left: 50%;
             transform: translate(-50%, -50%);
+            animation: float 6s ease-in-out infinite;
+        }
+
+        @keyframes float {
+            0%, 100% { transform: translate(-50%, -50%); }
+            50% { transform: translate(-50%, -55%); }
         }
 
         .admin-header h1 {
             font-family: 'Cormorant Garamond', serif;
-            font-size: 3rem;
-            font-weight: 600;
+            font-size: 2.5rem;
+            font-weight: 700;
             color: var(--branco);
-            margin-bottom: 10px;
+            margin-bottom: 5px;
             position: relative;
+            letter-spacing: 2px;
         }
 
         .admin-header p {
-            font-size: 1.2rem;
+            font-size: 1rem;
             color: var(--nude-areia);
             position: relative;
+            font-weight: 300;
         }
 
         .admin-header .subtitle {
             font-family: 'Cormorant Garamond', serif;
-            font-size: 1.5rem;
+            font-size: 1.1rem;
             color: var(--dourado);
             margin-top: 5px;
+            font-weight: 500;
         }
 
-        .back-link {
-            display: inline-block;
-            margin-top: 25px;
-            padding: 12px 30px;
-            background: rgba(255,255,255,0.1);
+        .header-actions {
+            display: flex;
+            gap: 10px;
+            justify-content: center;
+            margin-top: 15px;
+            position: relative;
+            flex-wrap: wrap;
+        }
+
+        .back-link, .export-btn {
+            padding: 8px 16px;
+            background: rgba(255,255,255,0.15);
             color: var(--branco);
             text-decoration: none;
-            border-radius: 30px;
-            border: 1px solid rgba(255,255,255,0.2);
+            border-radius: 25px;
+            border: 1.5px solid rgba(255,255,255,0.3);
             transition: all 0.3s ease;
-            font-size: 0.9rem;
+            font-size: 0.8rem;
+            font-weight: 500;
+            cursor: pointer;
         }
 
-        .back-link:hover {
-            background: rgba(255,255,255,0.2);
+        .back-link:hover, .export-btn:hover {
+            background: rgba(255,255,255,0.25);
             transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
 
         /* Container */
         .container {
-            max-width: 1200px;
+            max-width: 1400px;
             margin: 0 auto;
-            padding: 40px 20px;
+            padding: 30px 15px;
         }
 
         /* Stats */
         .stats-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
-            gap: 25px;
-            margin-bottom: 50px;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
+            margin-bottom: 40px;
         }
 
         .stat-card {
             background: var(--branco);
-            padding: 35px;
+            padding: 25px;
             border-radius: 16px;
             text-align: center;
-            box-shadow: 0 5px 25px rgba(0,0,0,0.05);
-            transition: all 0.3s ease;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.08);
+            transition: all 0.4s cubic-bezier(0.175, 0.885, 0.32, 1.275);
             position: relative;
             overflow: hidden;
         }
@@ -136,71 +156,85 @@
         }
 
         .stat-card.confirmados::before {
-            background: var(--success);
+            background: linear-gradient(90deg, var(--success), #5a9c6f);
         }
 
         .stat-card.recusados::before {
-            background: var(--error);
+            background: linear-gradient(90deg, var(--error), #c17570);
         }
 
         .stat-card.total::before {
-            background: var(--dourado);
+            background: linear-gradient(90deg, var(--dourado), #d4a574);
         }
 
         .stat-card:hover {
             transform: translateY(-5px);
-            box-shadow: 0 10px 35px rgba(0,0,0,0.1);
+            box-shadow: 0 15px 50px rgba(0,0,0,0.15);
         }
 
         .stat-number {
             font-family: 'Cormorant Garamond', serif;
-            font-size: 3.5rem;
+            font-size: 2.8rem;
             font-weight: 700;
-            color: var(--marrom-caramelo);
+            background: linear-gradient(135deg, var(--marrom-caramelo), var(--dourado));
+            -webkit-background-clip: text;
+            -webkit-text-fill-color: transparent;
+            background-clip: text;
             line-height: 1;
+            margin-bottom: 8px;
         }
 
         .stat-label {
-            font-size: 0.95rem;
+            font-size: 0.85rem;
             color: var(--cinza-medio);
-            margin-top: 10px;
             text-transform: uppercase;
             letter-spacing: 1px;
+            font-weight: 600;
         }
 
         /* Section Title */
         .section-title {
             font-family: 'Cormorant Garamond', serif;
-            font-size: 2.2rem;
-            font-weight: 600;
+            font-size: 1.8rem;
+            font-weight: 700;
             color: var(--marrom-caramelo);
-            margin: 50px 0 30px;
-            padding-bottom: 15px;
+            margin: 35px 0 20px;
+            padding-bottom: 12px;
             border-bottom: 2px solid var(--nude-areia);
             display: flex;
             align-items: center;
-            gap: 15px;
+            gap: 12px;
         }
 
         .section-title .emoji {
             font-size: 1.5rem;
         }
 
+        .section-count {
+            font-size: 0.95rem;
+            color: var(--bege-quente);
+            margin-left: auto;
+            font-family: 'Montserrat', sans-serif;
+            font-weight: 600;
+        }
+
         /* Guests Grid */
         .guests-grid {
             display: grid;
-            grid-template-columns: repeat(auto-fill, minmax(320px, 1fr));
-            gap: 25px;
+            grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
         }
 
         .guest-card {
             background: var(--branco);
-            border-radius: 16px;
-            padding: 25px;
-            box-shadow: 0 3px 15px rgba(0,0,0,0.05);
-            transition: all 0.3s ease;
+            border-radius: 14px;
+            padding: 18px;
+            box-shadow: 0 5px 20px rgba(0,0,0,0.06);
+            transition: all 0.4s ease;
             position: relative;
             overflow: hidden;
+            border: 1px solid rgba(0,0,0,0.03);
         }
 
         .guest-card::before {
@@ -213,100 +247,116 @@
         }
 
         .guest-card.confirmed::before {
-            background: var(--success);
+            background: linear-gradient(180deg, var(--success), #5a9c6f);
         }
 
         .guest-card.declined::before {
-            background: var(--error);
+            background: linear-gradient(180deg, var(--error), #c17570);
         }
 
         .guest-card:hover {
-            box-shadow: 0 8px 30px rgba(0,0,0,0.1);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.12);
             transform: translateY(-3px);
         }
 
         .guest-card.declined {
-            opacity: 0.75;
+            opacity: 0.85;
         }
 
         /* Guest Photo */
         .guest-photo {
             width: 100%;
-            height: 180px;
+            height: 140px;
             object-fit: cover;
-            border-radius: 12px;
-            margin-bottom: 20px;
+            border-radius: 10px;
+            margin-bottom: 12px;
             cursor: pointer;
-            transition: all 0.3s ease;
+            transition: all 0.4s ease;
             display: block;
+            box-shadow: 0 4px 15px rgba(0,0,0,0.1);
         }
 
         .guest-photo:hover {
-            transform: scale(1.03);
-            box-shadow: 0 5px 20px rgba(0,0,0,0.15);
+            transform: scale(1.05);
+            box-shadow: 0 8px 25px rgba(0,0,0,0.2);
+        }
+
+        .guest-info {
+            margin-bottom: 12px;
         }
 
         .guest-name {
             font-family: 'Cormorant Garamond', serif;
-            font-size: 1.5rem;
-            font-weight: 600;
+            font-size: 1.3rem;
+            font-weight: 700;
             color: var(--cinza-escuro);
-            margin-bottom: 5px;
+            margin-bottom: 3px;
         }
 
         .guest-email {
-            font-size: 0.9rem;
+            font-size: 0.8rem;
             color: var(--cinza-medio);
-            margin-bottom: 15px;
+            word-break: break-all;
         }
 
         .guest-status {
             display: inline-block;
-            padding: 6px 18px;
+            padding: 5px 14px;
             border-radius: 20px;
-            font-size: 0.85rem;
-            font-weight: 500;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-bottom: 10px;
         }
 
         .guest-status.confirmed {
-            background: rgba(74, 124, 89, 0.1);
+            background: rgba(74, 124, 89, 0.15);
             color: var(--success);
         }
 
         .guest-status.declined {
-            background: rgba(166, 93, 87, 0.1);
+            background: rgba(166, 93, 87, 0.15);
             color: var(--error);
         }
 
         .guest-message {
-            margin-top: 20px;
-            padding: 18px;
-            background: var(--bege-claro);
-            border-radius: 12px;
+            margin: 12px 0;
+            padding: 12px;
+            background: linear-gradient(135deg, var(--bege-claro), #faf5f0);
+            border-radius: 10px;
             font-style: italic;
             color: var(--cinza-medio);
             border-left: 3px solid var(--dourado);
+            font-size: 0.85rem;
+            line-height: 1.4;
         }
 
         .guest-date {
-            margin-top: 15px;
-            font-size: 0.8rem;
+            margin-top: 10px;
+            padding-top: 10px;
+            border-top: 1px solid var(--cinza-claro);
+            font-size: 0.75rem;
             color: var(--bege-quente);
+            font-weight: 500;
         }
 
         /* Empty State */
         .empty-state {
             text-align: center;
-            padding: 60px 20px;
+            padding: 50px 30px;
             color: var(--cinza-medio);
             background: var(--branco);
-            border-radius: 16px;
+            border-radius: 14px;
+            border: 2px dashed var(--nude-areia);
         }
 
         .empty-state .icon {
             font-size: 3rem;
-            margin-bottom: 20px;
-            opacity: 0.3;
+            margin-bottom: 15px;
+            opacity: 0.4;
+        }
+
+        .empty-state p {
+            font-size: 0.95rem;
         }
 
         /* Refresh Button */
@@ -314,55 +364,55 @@
             position: fixed;
             bottom: 30px;
             right: 30px;
-            width: 65px;
-            height: 65px;
+            width: 55px;
+            height: 55px;
             border-radius: 50%;
             background: linear-gradient(135deg, var(--marrom-caramelo), var(--marrom-escuro));
             color: var(--branco);
             border: none;
             cursor: pointer;
-            box-shadow: 0 5px 25px rgba(0,0,0,0.2);
-            transition: all 0.3s ease;
+            box-shadow: 0 8px 30px rgba(0,0,0,0.25);
+            transition: all 0.4s ease;
             display: flex;
             align-items: center;
             justify-content: center;
+            font-size: 1.3rem;
         }
 
         .refresh-btn:hover {
-            transform: scale(1.1);
-            box-shadow: 0 8px 35px rgba(0,0,0,0.25);
+            transform: scale(1.15) rotate(90deg);
+            box-shadow: 0 12px 40px rgba(0,0,0,0.3);
         }
 
-        .refresh-btn svg {
-            width: 24px;
-            height: 24px;
+        .refresh-btn.loading {
+            animation: spin 1s linear infinite;
+        }
+
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to { transform: rotate(360deg); }
         }
 
         /* Loading */
         .loading {
             text-align: center;
-            padding: 40px;
+            padding: 35px;
             color: var(--bege-quente);
-        }
-
-        /* Download Hint */
-        .download-hint {
-            font-size: 0.85rem;
-            color: var(--cinza-medio);
-            margin-bottom: 15px;
-            display: flex;
-            align-items: center;
-            gap: 5px;
+            font-size: 0.95rem;
         }
 
         /* Responsive */
         @media (max-width: 768px) {
             .admin-header h1 {
-                font-size: 2.2rem;
+                font-size: 1.8rem;
+            }
+
+            .admin-header .subtitle {
+                font-size: 0.95rem;
             }
 
             .stat-number {
-                font-size: 2.5rem;
+                font-size: 2rem;
             }
 
             .guests-grid {
@@ -370,7 +420,33 @@
             }
 
             .container {
-                padding: 30px 15px;
+                padding: 20px 10px;
+            }
+
+            .section-title {
+                font-size: 1.4rem;
+                flex-direction: column;
+                align-items: flex-start;
+            }
+
+            .section-count {
+                margin-left: 0;
+            }
+
+            .header-actions {
+                flex-direction: column;
+            }
+
+            .back-link, .export-btn {
+                width: 100%;
+            }
+
+            .refresh-btn {
+                bottom: 15px;
+                right: 15px;
+                width: 50px;
+                height: 50px;
+                font-size: 1.1rem;
             }
         }
     </style>
@@ -380,7 +456,11 @@
         <h1>Rafaela & Uilson</h1>
         <p>Área dos Noivos</p>
         <div class="subtitle">Confirmações de Presença</div>
-        <a href="index.html" class="back-link">← Voltar ao Site</a>
+        <div class="header-actions">
+            <a href="index.html" class="back-link">← Voltar ao Site</a>
+            <button class="export-btn" onclick="exportToCSV()">📊 Exportar CSV</button>
+            <button class="export-btn" onclick="downloadAllPhotos()">📸 Baixar Fotos</button>
+        </div>
     </header>
 
     <main class="container">
@@ -395,44 +475,51 @@
             </div>
             <div class="stat-card total">
                 <div class="stat-number" id="totalCount">0</div>
-                <div class="stat-label">Total</div>
+                <div class="stat-label">Total de Convidados</div>
             </div>
         </div>
 
         <h2 class="section-title">
             <span class="emoji">✅</span>
             Confirmados
+            <span class="section-count" id="confirmadosCountLabel">(0)</span>
         </h2>
         <div class="guests-grid" id="confirmadosList">
             <div class="loading">Carregando confirmações...</div>
         </div>
 
-        <h2 class="section-title" style="margin-top: 60px;">
+        <h2 class="section-title">
             <span class="emoji">❌</span>
             Recusados
+            <span class="section-count" id="recusadosCountLabel">(0)</span>
         </h2>
         <div class="guests-grid" id="recusadosList">
             <div class="loading">Carregando...</div>
         </div>
     </main>
 
-    <button class="refresh-btn" onclick="loadData()" title="Atualizar dados">
-        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2">
-            <path d="M23 4v6h-6M1 20v-6h6"/>
-            <path d="M3.51 9a9 9 0 0 1 14.85-3.36L23 10M1 14l4.64 4.36A9 9 0 0 0 20.49 15"/>
-        </svg>
-    </button>
+    <button class="refresh-btn" onclick="loadData()" title="Atualizar dados">🔄</button>
 
     <script>
+        let allData = { confirmados: [], recusados: [] };
+
         async function loadData() {
+            const btn = document.querySelector('.refresh-btn');
+            btn.classList.add('loading');
+            
             try {
                 const response = await fetch('/api/admin/convidados');
                 const data = await response.json();
                 
                 if (data.success) {
+                    allData = data;
+                    
                     document.getElementById('confirmadosCount').textContent = data.confirmados?.length || 0;
                     document.getElementById('recusadosCount').textContent = data.recusados?.length || 0;
                     document.getElementById('totalCount').textContent = data.total || 0;
+                    
+                    document.getElementById('confirmadosCountLabel').textContent = `(${data.confirmados?.length || 0})`;
+                    document.getElementById('recusadosCountLabel').textContent = `(${data.recusados?.length || 0})`;
                     
                     renderGuests('confirmadosList', data.confirmados || []);
                     renderGuests('recusadosList', data.recusados || []);
@@ -441,6 +528,8 @@
                 }
             } catch (error) {
                 console.error('Erro ao carregar dados:', error);
+            } finally {
+                btn.classList.remove('loading');
             }
         }
 
@@ -460,8 +549,10 @@
             container.innerHTML = guests.map(guest => `
                 <div class="guest-card ${guest.Presenca === 1 ? 'confirmed' : 'declined'}">
                     ${guest.FotoUrl ? `<img src="${guest.FotoUrl}" alt="${guest.Nome}" class="guest-photo" onclick="downloadPhoto('${guest.FotoUrl}', '${guest.Nome}')" title="Clique para baixar a foto">` : ''}
-                    <div class="guest-name">${guest.Nome}</div>
-                    <div class="guest-email">${guest.Email}</div>
+                    <div class="guest-info">
+                        <div class="guest-name">${guest.Nome}</div>
+                        <div class="guest-email">${guest.Email || 'Sem email'}</div>
+                    </div>
                     <span class="guest-status ${guest.Presenca === 1 ? 'confirmed' : 'declined'}">
                         ${guest.Presenca === 1 ? '✅ Confirmado' : '❌ Recusado'}
                     </span>
@@ -501,7 +592,105 @@
             }
         }
 
+        function exportToCSV() {
+            const rows = [];
+            
+            // Header
+            rows.push(['Nome', 'Email', 'Presença', 'Mensagem', 'Data Confirmação']);
+            
+            // Confirmados
+            allData.confirmados.forEach(guest => {
+                rows.push([
+                    guest.Nome,
+                    guest.Email || '',
+                    'Confirmado',
+                    guest.Mensagem || '',
+                    formatDate(guest.DataConfirmacao)
+                ]);
+            });
+            
+            // Recusados
+            allData.recusados.forEach(guest => {
+                rows.push([
+                    guest.Nome,
+                    guest.Email || '',
+                    'Recusado',
+                    guest.Mensagem || '',
+                    formatDate(guest.DataConfirmacao)
+                ]);
+            });
+            
+            // Converter para CSV
+            const csv = rows.map(row => 
+                row.map(cell => `"${String(cell).replace(/"/g, '""')}"`).join(',')
+            ).join('\n');
+            
+            // Download
+            const blob = new Blob([csv], { type: 'text/csv;charset=utf-8;' });
+            const link = document.createElement('a');
+            const url = URL.createObjectURL(blob);
+            link.setAttribute('href', url);
+            link.setAttribute('download', `convidados-${new Date().toISOString().split('T')[0]}.csv`);
+            link.style.visibility = 'hidden';
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        // Carrega dados ao iniciar
         loadData();
+        
+        // Atualiza a cada 30 segundos
+        setInterval(loadData, 30000);
+
+        async function downloadAllPhotos() {
+            const allGuests = [...allData.confirmados, ...allData.recusados];
+            const photosToDownload = allGuests.filter(guest => guest.FotoUrl);
+            
+            if (photosToDownload.length === 0) {
+                alert('Nenhuma foto para baixar!');
+                return;
+            }
+            
+            const btn = document.querySelector('.export-btn:last-of-type');
+            const originalText = btn.textContent;
+            btn.textContent = `📸 Baixando ${photosToDownload.length} fotos...`;
+            btn.disabled = true;
+            
+            let downloaded = 0;
+            
+            for (const guest of photosToDownload) {
+                try {
+                    const response = await fetch(guest.FotoUrl);
+                    const blob = await response.blob();
+                    const blobUrl = window.URL.createObjectURL(blob);
+                    const link = document.createElement('a');
+                    link.href = blobUrl;
+                    
+                    // Extrai extensão da URL
+                    const urlParts = guest.FotoUrl.split('.');
+                    const ext = urlParts[urlParts.length - 1].split('?')[0] || 'jpg';
+                    
+                    link.download = `${guest.Nome.replace(/\s+/g, '-')}-${new Date().getTime()}.${ext}`;
+                    document.body.appendChild(link);
+                    link.click();
+                    document.body.removeChild(link);
+                    window.URL.revokeObjectURL(blobUrl);
+                    
+                    downloaded++;
+                    btn.textContent = `📸 Baixando ${downloaded}/${photosToDownload.length}...`;
+                    
+                    // Pequeno delay entre downloads
+                    await new Promise(resolve => setTimeout(resolve, 300));
+                } catch (error) {
+                    console.error(`Erro ao baixar foto de ${guest.Nome}:`, error);
+                }
+            }
+            
+            btn.textContent = originalText;
+            btn.disabled = false;
+            alert(`✅ ${downloaded} fotos baixadas com sucesso!`);
+        }
     </script>
 </body>
 </html>

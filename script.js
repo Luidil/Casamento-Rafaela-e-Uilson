@@ -5,6 +5,8 @@
 
 document.addEventListener('DOMContentLoaded', () => {
     // Inicializa todas as funcionalidades
+    initCountdown();
+    initCarousel();
     initNavigation();
     initRSVPForm();
     initPhotoUpload();
@@ -13,8 +15,144 @@ document.addEventListener('DOMContentLoaded', () => {
 });
 
 const appState = {
-    uploadedFiles: []
+    uploadedFiles: [],
+    carouselIndex: 0,
+    carouselImages: []
 };
+
+/**
+ * Contagem Regressiva para o Casamento
+ */
+function initCountdown() {
+    const weddingDate = new Date('2026-09-01T00:00:00').getTime();
+    
+    function updateCountdown() {
+        const now = new Date().getTime();
+        const distance = weddingDate - now;
+        
+        if (distance < 0) {
+            // O casamento já aconteceu
+            document.getElementById('days').textContent = '0';
+            document.getElementById('hours').textContent = '0';
+            document.getElementById('minutes').textContent = '0';
+            document.getElementById('seconds').textContent = '0';
+            return;
+        }
+        
+        const days = Math.floor(distance / (1000 * 60 * 60 * 24));
+        const hours = Math.floor((distance % (1000 * 60 * 60 * 24)) / (1000 * 60 * 60));
+        const minutes = Math.floor((distance % (1000 * 60 * 60)) / (1000 * 60));
+        const seconds = Math.floor((distance % (1000 * 60)) / 1000);
+        
+        document.getElementById('days').textContent = String(days).padStart(2, '0');
+        document.getElementById('hours').textContent = String(hours).padStart(2, '0');
+        document.getElementById('minutes').textContent = String(minutes).padStart(2, '0');
+        document.getElementById('seconds').textContent = String(seconds).padStart(2, '0');
+    }
+    
+    // Atualiza a contagem regressiva imediatamente
+    updateCountdown();
+    
+    // Atualiza a cada segundo
+    setInterval(updateCountdown, 1000);
+}
+
+/**
+ * Carrossel de Fotos na Hero Section
+ */
+function initCarousel() {
+    const carouselContainer = document.querySelector('.carousel-container');
+    const prevBtn = document.getElementById('prevBtn');
+    const nextBtn = document.getElementById('nextBtn');
+    const carouselDots = document.getElementById('carouselDots');
+    
+    if (!carouselContainer) return;
+    
+    // Carrega imagens da pasta 'fotos'
+    loadCarouselImages();
+    
+    function loadCarouselImages() {
+        // Carrega imagens da pasta 'Fotos'
+        const imageFiles = [
+            '/Fotos/1.png',
+            '/Fotos/2.png',
+            '/Fotos/3.png',
+            '/Fotos/5.jpg',
+            '/Fotos/6.jpg',
+            '/Fotos/7.jpg',
+            '/Fotos/8.jpg',
+            '/Fotos/9.png',
+            '/Fotos/10.png',
+            '/Fotos/11.png',
+            '/Fotos/14.jpg',
+            '/Fotos/15.jpg',
+            '/Fotos/16.jpg',
+            '/Fotos/17.jpg',
+            '/Fotos/18.jpg',
+            '/Fotos/19.jpg',
+            '/Fotos/20.jpg',
+            '/Fotos/21.jpg',
+            '/Fotos/22.jpg',
+            '/Fotos/23.jpg'
+        ];
+        
+        appState.carouselImages = imageFiles;
+        renderCarousel();
+    }
+    
+    function renderCarousel() {
+        carouselContainer.innerHTML = '';
+        carouselDots.innerHTML = '';
+        
+        appState.carouselImages.forEach((image, index) => {
+            // Cria slide
+            const slide = document.createElement('div');
+            slide.className = `carousel-slide ${index === 0 ? 'active' : ''}`;
+            slide.innerHTML = `<img src="${image}" alt="Foto ${index + 1}" class="carousel-image" onerror="this.src='/Fotos/1.png'">`;
+            carouselContainer.appendChild(slide);
+            
+            // Cria dot
+            const dot = document.createElement('div');
+            dot.className = `carousel-dot ${index === 0 ? 'active' : ''}`;
+            dot.addEventListener('click', () => showSlide(index));
+            carouselDots.appendChild(dot);
+        });
+    }
+    
+    function showSlide(index) {
+        const slides = document.querySelectorAll('.carousel-slide');
+        const dots = document.querySelectorAll('.carousel-dot');
+        
+        if (index >= slides.length) {
+            appState.carouselIndex = 0;
+        } else if (index < 0) {
+            appState.carouselIndex = slides.length - 1;
+        } else {
+            appState.carouselIndex = index;
+        }
+        
+        slides.forEach(slide => slide.classList.remove('active'));
+        dots.forEach(dot => dot.classList.remove('active'));
+        
+        slides[appState.carouselIndex].classList.add('active');
+        dots[appState.carouselIndex].classList.add('active');
+    }
+    
+    function nextSlide() {
+        showSlide(appState.carouselIndex + 1);
+    }
+    
+    function prevSlide() {
+        showSlide(appState.carouselIndex - 1);
+    }
+    
+    // Event listeners
+    if (nextBtn) nextBtn.addEventListener('click', nextSlide);
+    if (prevBtn) prevBtn.addEventListener('click', prevSlide);
+    
+    // Auto-play do carrossel a cada 5 segundos
+    setInterval(nextSlide, 5000);
+}
 
 /**
  * Navegação suave e navbar fixo
@@ -123,7 +261,7 @@ function initRSVPForm() {
         console.log('Dados coletados:', data);
         
         // Validação básica
-        if (!data.nome || !data.email || !data.presenca) {
+        if (!data.nome || !data.presenca) {
             showAlert('Por favor, preencha todos os campos obrigatórios.', 'error');
             return;
         }
@@ -166,16 +304,26 @@ async function simulateRSVPSubmit(data) {
 }
 
 function initPhotoShareQr() {
-    const downloadQrPdfBtn = document.getElementById('downloadQrPdfBtn');
-
-    if (!downloadQrPdfBtn) return;
+    const canvas = document.getElementById('qrCodeCanvas');
+    
+    if (!canvas) return;
 
     const shareUrl = new URL(window.location.href);
     shareUrl.hash = 'fotos';
 
     const shareTarget = `${shareUrl.pathname}${shareUrl.search}${shareUrl.hash}`;
-    downloadQrPdfBtn.href = `/api/qrcode-pdf?target=${encodeURIComponent(shareTarget)}`;
-    downloadQrPdfBtn.setAttribute('download', 'qrcode-fotos.pdf');
+    
+    // Usar API de QR Code confiável
+    const qrApiUrl = `https://api.qrserver.com/v1/create-qr-code/?size=250x250&data=${encodeURIComponent(shareTarget)}&color=8B5E4A&bgcolor=FAF7F2`;
+    
+    const img = document.createElement('img');
+    img.src = qrApiUrl;
+    img.style.maxWidth = '250px';
+    img.style.width = '100%';
+    img.style.height = 'auto';
+    img.alt = 'QR Code';
+    
+    canvas.parentNode.replaceChild(img, canvas);
 }
 
 /**
@@ -233,10 +381,10 @@ function initPhotoUpload() {
     function handleFiles(files) {
         if (!files || files.length === 0) return;
         
-        const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'video/mp4', 'video/webm'];
+        const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/jpg', 'video/mp4', 'video/webm', 'video/quicktime'];
         
         Array.from(files).forEach(file => {
-            if (validTypes.includes(file.type)) {
+            if (validTypes.includes(file.type) || file.type.startsWith('image/') || file.type.startsWith('video/')) {
                 uploadFile(file);
             } else {
                 showAlert(`Arquivo "${file.name}" não é suportado. Use imagens ou vídeos.`, 'error');
@@ -299,18 +447,30 @@ function initPhotoUpload() {
             
             if (file.type === 'image') {
                 fileItem.innerHTML = `
-                    <img src="${file.url}" alt="${file.name}" loading="lazy">
+                    <img src="${file.url}" alt="${file.name}" loading="lazy" class="file-item-media">
                     <button class="remove-btn" onclick="removeFile(${file.id})">×</button>
                 `;
+                fileItem.querySelector('.file-item-media').addEventListener('click', () => {
+                    openViewModal(file.url, 'image');
+                });
             } else {
                 fileItem.innerHTML = `
-                    <video src="${file.url}" muted></video>
+                    <video src="${file.url}" muted class="file-item-media"></video>
                     <button class="remove-btn" onclick="removeFile(${file.id})">×</button>
                 `;
+                fileItem.querySelector('.file-item-media').addEventListener('click', () => {
+                    openViewModal(file.url, 'video');
+                });
             }
             
             filesGrid.appendChild(fileItem);
         });
+        
+        // Mostra/esconde botão de download
+        const downloadBtn = document.getElementById('downloadAllPhotosBtn');
+        if (downloadBtn) {
+            downloadBtn.style.display = appState.uploadedFiles.length > 0 ? 'block' : 'none';
+        }
     }
     
     function saveFilesToStorage() {
@@ -325,10 +485,92 @@ function initPhotoUpload() {
     
     // Função global para remover arquivo
     window.removeFile = function(fileId) {
-        appState.uploadedFiles = appState.uploadedFiles.filter(f => f.id !== fileId);
-        renderFiles();
-        saveFilesToStorage();
-        showAlert('Arquivo removido.', 'success');
+        const modal = document.getElementById('confirmModal');
+        const overlay = document.getElementById('modalOverlay');
+        const modalConfirm = document.getElementById('modalConfirm');
+        const modalCancel = document.getElementById('modalCancel');
+        const modalClose = document.getElementById('modalClose');
+        
+        // Mostra o modal
+        modal.style.display = 'block';
+        overlay.style.display = 'block';
+        
+        // Função para fechar o modal
+        const closeModal = () => {
+            modal.style.display = 'none';
+            overlay.style.display = 'none';
+        };
+        
+        // Confirmar remoção
+        modalConfirm.onclick = () => {
+            appState.uploadedFiles = appState.uploadedFiles.filter(f => f.id !== fileId);
+            renderFiles();
+            saveFilesToStorage();
+            showAlert('Foto removida com sucesso.', 'success');
+            closeModal();
+        };
+        
+        // Cancelar
+        modalCancel.onclick = closeModal;
+        modalClose.onclick = closeModal;
+        
+        // Fechar ao clicar no overlay
+        overlay.onclick = closeModal;
+    };
+    
+    // Função para abrir modal de visualização
+    window.openViewModal = function(src, type) {
+        const viewModal = document.getElementById('viewModal');
+        const viewOverlay = document.getElementById('viewModalOverlay');
+        const viewImage = document.getElementById('viewModalImage');
+        const viewVideo = document.getElementById('viewModalVideo');
+        const viewClose = document.getElementById('viewModalClose');
+        const viewDownload = document.getElementById('viewModalDownload');
+        
+        // Limpa os elementos
+        viewImage.style.display = 'none';
+        viewVideo.style.display = 'none';
+        
+        // Mostra o tipo correto
+        if (type === 'image') {
+            viewImage.src = src;
+            viewImage.style.display = 'block';
+        } else {
+            viewVideo.src = src;
+            viewVideo.style.display = 'block';
+        }
+        
+        // Mostra o modal
+        viewModal.style.display = 'block';
+        viewOverlay.style.display = 'block';
+        
+        // Função para fechar
+        const closeViewModal = () => {
+            viewModal.style.display = 'none';
+            viewOverlay.style.display = 'none';
+        };
+        
+        // Função para baixar
+        viewDownload.onclick = () => {
+            const link = document.createElement('a');
+            link.href = src;
+            link.download = src.split('/').pop() || `download.${type === 'image' ? 'jpg' : 'mp4'}`;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        };
+        
+        viewClose.onclick = closeViewModal;
+        viewOverlay.onclick = closeViewModal;
+        
+        // Fechar com ESC
+        const handleEsc = (e) => {
+            if (e.key === 'Escape') {
+                closeViewModal();
+                document.removeEventListener('keydown', handleEsc);
+            }
+        };
+        document.addEventListener('keydown', handleEsc);
     };
     
     // Carrega arquivos do localStorage
@@ -336,15 +578,73 @@ function initPhotoUpload() {
     
     function loadFilesFromStorage() {
         try {
-            const saved = localStorage.getItem('weddingFiles');
-            if (saved) {
-                // Nota: URLs de blob não persistem após refresh
-                // Esta é uma implementação básica para demonstração
-                console.log('Carregando arquivos do storage:', JSON.parse(saved));
-            }
+            // Carrega as fotos do servidor via API
+            fetch('/api/uploaded-files')
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success && data.files) {
+                        appState.uploadedFiles = data.files;
+                        renderFiles();
+                    }
+                })
+                .catch(err => console.log('Fotos locais não disponíveis'));
         } catch (e) {
             console.error('Erro ao carregar arquivos:', e);
         }
+    }
+    
+    // Função para baixar todas as fotos
+    window.downloadAllPhotos = async function() {
+        const filesToDownload = appState.uploadedFiles;
+        
+        if (filesToDownload.length === 0) {
+            showAlert('Nenhuma foto para baixar!', 'error');
+            return;
+        }
+        
+        const btn = document.getElementById('downloadAllPhotosBtn');
+        const originalText = btn.textContent;
+        btn.disabled = true;
+        
+        let downloaded = 0;
+        
+        for (const file of filesToDownload) {
+            try {
+                const response = await fetch(file.url);
+                const blob = await response.blob();
+                const blobUrl = window.URL.createObjectURL(blob);
+                const link = document.createElement('a');
+                link.href = blobUrl;
+                
+                // Extrai extensão da URL
+                const urlParts = file.url.split('.');
+                const ext = urlParts[urlParts.length - 1].split('?')[0] || 'jpg';
+                
+                link.download = `foto-${new Date().getTime()}-${downloaded + 1}.${ext}`;
+                document.body.appendChild(link);
+                link.click();
+                document.body.removeChild(link);
+                window.URL.revokeObjectURL(blobUrl);
+                
+                downloaded++;
+                btn.textContent = `📸 Baixando ${downloaded}/${filesToDownload.length}...`;
+                
+                // Pequeno delay entre downloads
+                await new Promise(resolve => setTimeout(resolve, 300));
+            } catch (error) {
+                console.error(`Erro ao baixar foto:`, error);
+            }
+        }
+        
+        btn.textContent = originalText;
+        btn.disabled = false;
+        showAlert(`✅ ${downloaded} fotos baixadas com sucesso!`, 'success');
+    };
+    
+    // Adiciona listener ao botão
+    const downloadAllBtn = document.getElementById('downloadAllPhotosBtn');
+    if (downloadAllBtn) {
+        downloadAllBtn.addEventListener('click', downloadAllPhotos);
     }
 }
 
