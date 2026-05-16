@@ -1,7 +1,7 @@
 /**
  * Servidor Local - Site de Casamento
  * Execute: node server.js
- * Banco: PostgreSQL
+ * Banco: SQLite (casamento.db)
  */
 
 const http = require('http');
@@ -9,25 +9,20 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 const { Client } = require('pg');
-const multiparty = require('multiparty');
-const PDFDocument = require('pdfkit');
-const QRCode = require('qrcode');
-const nodemailer = require('nodemailer');
 
-// Configuração do PostgreSQL
-const connectionString = process.env.DATABASE_URL || `postgresql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`;
+// Configuração do PostgreSQL Supabase
+const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:Luidillindo123@@db.zuipsuyioiwiicghhubz.supabase.co:5432/postgres';
 
 const db = new Client({
     connectionString: connectionString,
-    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+    ssl: { rejectUnauthorized: false }
 });
 
 db.connect((err) => {
     if (err) {
-        console.error('❌ Erro ao conectar ao PostgreSQL:', err.message);
-        console.error('Connection String:', connectionString.replace(/:[^:]*@/, ':***@'));
+        console.error('❌ Erro ao conectar ao Supabase:', err.message);
     } else {
-        console.log('✅ Conectado ao PostgreSQL');
+        console.log('✅ Conectado ao Supabase PostgreSQL');
         initializeDatabase();
     }
 });
@@ -172,9 +167,177 @@ function initializeDatabase() {
 
     tables.forEach(sql => {
         db.query(sql, (err) => {
-            if (err) console.error('❌ Erro ao criar tabela:', err.message);
-            else console.log('✅ Tabela criada/verificada');
+            if (err && !err.message.includes('already exists')) {
+                console.error('❌ Erro ao criar tabela:', err.message);
+            } else if (!err) {
+                console.log('✅ Tabela criada/verificada');
+            }
         });
+    });
+}
+            else console.log('✅ Tabela musicas pronta');
+        });
+
+        // Tabela de comentários
+        db.run(`
+            CREATE TABLE IF NOT EXISTS comentarios (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id_convidado INTEGER,
+                nome TEXT NOT NULL,
+                email TEXT NOT NULL,
+                mensagem TEXT NOT NULL,
+                aprovado BOOLEAN DEFAULT 0,
+                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(id_convidado) REFERENCES convidados(id) ON DELETE CASCADE
+            )
+        `, (err) => {
+            if (err) console.error('❌ Erro ao criar tabela comentarios:', err.message);
+            else console.log('✅ Tabela comentarios pronta');
+        });
+
+        // Tabela de galeria de fotos
+        db.run(`
+            CREATE TABLE IF NOT EXISTS galeria_fotos (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                titulo TEXT NOT NULL,
+                descricao TEXT,
+                categoria TEXT,
+                ordem INTEGER DEFAULT 0,
+                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `, (err) => {
+            if (err) console.error('❌ Erro ao criar tabela galeria_fotos:', err.message);
+            else console.log('✅ Tabela galeria_fotos pronta');
+        });
+
+        // Tabela de fotos da galeria
+        db.run(`
+            CREATE TABLE IF NOT EXISTS fotos_galeria (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id_galeria INTEGER NOT NULL,
+                nome_original TEXT NOT NULL,
+                nome_arquivo TEXT NOT NULL,
+                tipo_arquivo TEXT NOT NULL,
+                tamanho INTEGER NOT NULL,
+                url TEXT NOT NULL,
+                ordem INTEGER DEFAULT 0,
+                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(id_galeria) REFERENCES galeria_fotos(id) ON DELETE CASCADE
+            )
+        `, (err) => {
+            if (err) console.error('❌ Erro ao criar tabela fotos_galeria:', err.message);
+            else console.log('✅ Tabela fotos_galeria pronta');
+        });
+
+        // Tabela de fotos dos convidados
+        db.run(`
+            CREATE TABLE IF NOT EXISTS fotos_convidados (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                id_convidado INTEGER NOT NULL,
+                nome_original TEXT NOT NULL,
+                nome_arquivo TEXT NOT NULL,
+                tipo_arquivo TEXT NOT NULL,
+                tamanho INTEGER NOT NULL,
+                url TEXT NOT NULL,
+                aprovado BOOLEAN DEFAULT 0,
+                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(id_convidado) REFERENCES convidados(id) ON DELETE CASCADE
+            )
+        `, (err) => {
+            if (err) console.error('❌ Erro ao criar tabela fotos_convidados:', err.message);
+            else console.log('✅ Tabela fotos_convidados pronta');
+        });
+
+        // Tabela de cronograma
+        db.run(`
+            CREATE TABLE IF NOT EXISTS cronograma (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                horario TEXT NOT NULL,
+                evento TEXT NOT NULL,
+                descricao TEXT,
+                local TEXT,
+                ordem INTEGER DEFAULT 0,
+                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `, (err) => {
+            if (err) console.error('❌ Erro ao criar tabela cronograma:', err.message);
+            else console.log('✅ Tabela cronograma pronta');
+        });
+
+        // Tabela de hospedagem
+        db.run(`
+            CREATE TABLE IF NOT EXISTS hospedagem (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                nome TEXT NOT NULL,
+                tipo TEXT,
+                endereco TEXT,
+                telefone TEXT,
+                email TEXT,
+                website TEXT,
+                descricao TEXT,
+                preco_aproximado TEXT,
+                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `, (err) => {
+            if (err) console.error('❌ Erro ao criar tabela hospedagem:', err.message);
+            else console.log('✅ Tabela hospedagem pronta');
+        });
+
+        // Tabela de transporte
+        db.run(`
+            CREATE TABLE IF NOT EXISTS transporte (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tipo TEXT,
+                saida_local TEXT,
+                saida_horario TEXT,
+                destino_local TEXT,
+                destino_horario TEXT,
+                capacidade INTEGER,
+                observacoes TEXT,
+                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `, (err) => {
+            if (err) console.error('❌ Erro ao criar tabela transporte:', err.message);
+            else console.log('✅ Tabela transporte pronta');
+        });
+
+        // Tabela de logs
+        db.run(`
+            CREATE TABLE IF NOT EXISTS logs (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                tipo_acao TEXT NOT NULL,
+                descricao TEXT,
+                id_convidado INTEGER,
+                ip_address TEXT,
+                user_agent TEXT,
+                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+                FOREIGN KEY(id_convidado) REFERENCES convidados(id) ON DELETE SET NULL
+            )
+        `, (err) => {
+            if (err) console.error('❌ Erro ao criar tabela logs:', err.message);
+            else console.log('✅ Tabela logs pronta');
+        });
+
+        // Tabela de configurações
+        db.run(`
+            CREATE TABLE IF NOT EXISTS configuracoes (
+                id INTEGER PRIMARY KEY AUTOINCREMENT,
+                chave TEXT NOT NULL UNIQUE,
+                valor TEXT NOT NULL,
+                descricao TEXT,
+                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
+                atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP
+            )
+        `, (err) => {
+            if (err) console.error('❌ Erro ao criar tabela configuracoes:', err.message);
+            else console.log('✅ Tabela configuracoes pronta');
+        });
+
+        // Criar índices
+        db.run('CREATE INDEX IF NOT EXISTS ix_convidados_email ON convidados(email)');
+        db.run('CREATE INDEX IF NOT EXISTS ix_convidados_presenca ON convidados(presenca)');
+        db.run('CREATE INDEX IF NOT EXISTS ix_fotos_convidado ON fotos(id_convidado)');
+        db.run('CREATE INDEX IF NOT EXISTS ix_fotos_galeria_id ON fotos_galeria(id_galeria)');
     });
 }
 
