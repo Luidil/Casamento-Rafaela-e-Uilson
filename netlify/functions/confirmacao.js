@@ -108,7 +108,7 @@ exports.handler = async (event, context) => {
                 .single();
 
             if (existing) {
-                await supabase
+                const { error: updateError } = await supabase
                     .from('convidados')
                     .update({
                         nome,
@@ -117,8 +117,14 @@ exports.handler = async (event, context) => {
                         data_confirmacao: new Date().toISOString()
                     })
                     .eq('email', emailValue);
+                
+                if (updateError) {
+                    console.error('Erro ao atualizar:', updateError);
+                    throw new Error(updateError.message);
+                }
+                console.log('Convidado atualizado:', nome);
             } else {
-                await supabase
+                const { error: insertError } = await supabase
                     .from('convidados')
                     .insert({
                         nome,
@@ -126,6 +132,12 @@ exports.handler = async (event, context) => {
                         presenca: presencaValue,
                         mensagem: mensagem || null
                     });
+                
+                if (insertError) {
+                    console.error('Erro ao inserir:', insertError);
+                    throw new Error(insertError.message);
+                }
+                console.log('Convidado inserido:', nome);
             }
 
             if (presencaValue && email) {
