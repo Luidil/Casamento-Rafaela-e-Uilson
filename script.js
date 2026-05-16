@@ -288,7 +288,7 @@ function initRSVPForm() {
  * Envia os dados para a API
  */
 async function simulateRSVPSubmit(data) {
-    const response = await fetch('/api/confirmacao', {
+    const response = await fetch('https://casamento-rafaela-e-uilson.up.railway.app/api/confirmacao', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
@@ -402,7 +402,7 @@ function initPhotoUpload() {
             const formData = new FormData();
             formData.append('file', file);
             
-            const response = await fetch('/api/upload', {
+            const response = await fetch('https://casamento-rafaela-e-uilson.up.railway.app/api/upload', {
                 method: 'POST',
                 body: formData
             });
@@ -579,7 +579,7 @@ function initPhotoUpload() {
     function loadFilesFromStorage() {
         try {
             // Carrega as fotos do servidor via API
-            fetch('/api/uploaded-files')
+            fetch('https://casamento-rafaela-e-uilson.up.railway.app/api/uploaded-files')
                 .then(res => res.json())
                 .then(data => {
                     if (data.success && data.files) {
