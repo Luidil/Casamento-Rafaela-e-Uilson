@@ -1,8 +1,7 @@
 const nodemailer = require('nodemailer');
 
-// ID da Google Sheet
-const SHEET_ID = '1RTxxXaK4P0EswifIkob5YcdX6PzVAOK7EncuN_8GbPM';
-const SHEET_NAME = 'Sheet1';
+// URL do Apps Script (vem da variável de ambiente do Netlify)
+const GOOGLE_APPS_SCRIPT_URL = process.env.GOOGLE_APPS_SCRIPT_URL;
 
 // Configurar email
 const transporter = nodemailer.createTransport({
@@ -74,50 +73,16 @@ async function enviarEmailConfirmacao(nome, email) {
     }
 }
 
-// Buscar dados da Google Sheet
-async function getConvidados() {
+// Salvar na Google Sheet via Apps Script
+async function salvarNaGoogleSheet(nome, email, presenca, mensagem) {
     try {
-        const url = `https://docs.google.com/spreadsheets/d/${SHEET_ID}/gviz/tq?tqx=out:json`;
-        const response = await fetch(url);
-        const text = await response.text();
-        
-        // Remove o prefixo da resposta
-        const jsonStr = text.substring(text.indexOf('{'), text.lastIndexOf('}') + 1);
-        const data = JSON.parse(jsonStr);
-        
-        const convidados = [];
-        if (data.table && data.table.rows) {
-            data.table.rows.forEach((row, index) => {
-                if (index === 0) return; // Pula header
-                convidados.push({
-                    id: row.c[0]?.v || index,
-                    nome: row.c[1]?.v || '',
-                    email: row.c[2]?.v || '',
-                    presenca: row.c[3]?.v === 'sim' || row.c[3]?.v === true,
-                    mensagem: row.c[4]?.v || '',
-                    data_confirmacao: row.c[5]?.v || new Date().toISOString()
-                });
-            });
+        if (!GOOGLE_APPS_SCRIPT_URL) {
+            throw new Error('GOOGLE_APPS_SCRIPT_URL não configurada');
         }
-        
-        return convidados;
-    } catch (error) {
-        console.error('Erro ao buscar dados:', error);
-        return [];
-    }
-}
 
-// Adicionar/atualizar convidado na Google Sheet via Apps Script
-async function salvarConvidado(nome, email, presenca, mensagem) {
-    try {
-        const scriptUrl = process.env.GOOGLE_APPS_SCRIPT_URL;
-        
-        if (!scriptUrl) {
-            console.warn('GOOGLE_APPS_SCRIPT_URL não configurada');
-            return false;
-        }
-        
-        const response = await fetch(scriptUrl, {
+        console.log('Enviando para Google Sheet:', { nome, email, presenca, mensagem });
+
+        const response = await fetch(GOOGLE_APPS_SCRIPT_URL, {
             method: 'POST',
             headers: {
                 'Content-Type': 'application/json'
@@ -129,10 +94,12 @@ async function salvarConvidado(nome, email, presenca, mensagem) {
                 mensagem
             })
         });
-        
-        const result = await response.json();
+
+        const text = await response.text();
+        console.log('Resposta bruta:', text);
+
+        const result = JSON.parse(text);
         console.log('Resposta do Apps Script:', result);
-        
         return result.success;
     } catch (error) {
         console.error('Erro ao salvar na Google Sheet:', error);
@@ -168,7 +135,7 @@ exports.handler = async (event, context) => {
             const presencaValue = presenca === 'sim' || presenca === true ? 'sim' : 'não';
 
             // Salvar na Google Sheet
-            await salvarConvidado(nome, email, presencaValue, mensagem);
+            await salvarNaGoogleSheet(nome, email, presencaValue, mensagem);
 
             // Enviar email se confirmou presença
             if (presencaValue === 'sim') {
