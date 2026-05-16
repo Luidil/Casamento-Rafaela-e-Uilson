@@ -471,10 +471,13 @@ function initPhotoUpload() {
             fileItem.className = 'file-item';
             fileItem.dataset.id = file.id;
             
+            // Usar name como identificador único para deletar
+            const fileIdentifier = file.name || file.id;
+            
             if (file.type === 'image') {
                 fileItem.innerHTML = `
                     <img src="${file.url}" alt="${file.name}" loading="lazy" class="file-item-media">
-                    <button class="remove-btn" onclick="removeFile(${file.id})">×</button>
+                    <button class="remove-btn" onclick="removeFile('${fileIdentifier}')">×</button>
                 `;
                 fileItem.querySelector('.file-item-media').addEventListener('click', () => {
                     openViewModal(file.url, 'image');
@@ -482,7 +485,7 @@ function initPhotoUpload() {
             } else {
                 fileItem.innerHTML = `
                     <video src="${file.url}" muted class="file-item-media"></video>
-                    <button class="remove-btn" onclick="removeFile(${file.id})">×</button>
+                    <button class="remove-btn" onclick="removeFile('${fileIdentifier}')">×</button>
                 `;
                 fileItem.querySelector('.file-item-media').addEventListener('click', () => {
                     openViewModal(file.url, 'video');
@@ -510,52 +513,43 @@ function initPhotoUpload() {
     }
     
     // Função global para remover arquivo
-    window.removeFile = function(fileId) {
+    window.removeFile = function(fileIdentifier) {
         const modal = document.getElementById('confirmModal');
         const overlay = document.getElementById('modalOverlay');
         const modalConfirm = document.getElementById('modalConfirm');
         const modalCancel = document.getElementById('modalCancel');
         const modalClose = document.getElementById('modalClose');
         
-        // Mostra o modal
         modal.style.display = 'block';
         overlay.style.display = 'block';
         
-        // Função para fechar o modal
         const closeModal = () => {
             modal.style.display = 'none';
             overlay.style.display = 'none';
         };
         
-        // Confirmar remoção
         modalConfirm.onclick = async () => {
-            const file = appState.uploadedFiles.find(f => f.id === fileId);
-            
-            // Deletar do Supabase Storage
-            if (file && file.name) {
-                try {
-                    await fetch('/.netlify/functions/upload', {
-                        method: 'DELETE',
-                        headers: { 'Content-Type': 'application/json' },
-                        body: JSON.stringify({ fileName: file.name })
-                    });
-                } catch (err) {
-                    console.error('Erro ao deletar do servidor:', err);
-                }
+            try {
+                await fetch('/.netlify/functions/upload', {
+                    method: 'DELETE',
+                    headers: { 'Content-Type': 'application/json' },
+                    body: JSON.stringify({ fileName: fileIdentifier })
+                });
+            } catch (err) {
+                console.error('Erro ao deletar:', err);
             }
             
-            appState.uploadedFiles = appState.uploadedFiles.filter(f => f.id !== fileId);
+            // Remove da lista local
+            appState.uploadedFiles = appState.uploadedFiles.filter(f => 
+                f.name !== fileIdentifier && String(f.id) !== String(fileIdentifier)
+            );
             renderFiles();
-            saveFilesToStorage();
             showAlert('Foto removida com sucesso.', 'success');
             closeModal();
         };
         
-        // Cancelar
         modalCancel.onclick = closeModal;
         modalClose.onclick = closeModal;
-        
-        // Fechar ao clicar no overlay
         overlay.onclick = closeModal;
     };
     
