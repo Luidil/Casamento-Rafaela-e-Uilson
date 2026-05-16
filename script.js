@@ -288,7 +288,7 @@ function initRSVPForm() {
  * Envia os dados para a API
  */
 async function simulateRSVPSubmit(data) {
-    const response = await fetch('/.netlify/functions/confirmacao', {
+    const response = await fetch('/api/confirmacao', {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
