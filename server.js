@@ -15,23 +15,43 @@ const PDFDocument = require('pdfkit');
 const multiparty = require('multiparty');
 
 // Configuração do PostgreSQL Supabase
-const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:Luidillindo123@db.zuipsuyioiwiicghhubz.supabase.co:5432/postgres';
+const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:IjVQBvAWCZ0gTYdp@db.zuipsuyioiwiicghhubz.supabase.co:5432/postgres';
 
 const db = new Client({
     connectionString: connectionString,
-    ssl: { rejectUnauthorized: false }
+    ssl: { rejectUnauthorized: false },
+    connectionTimeoutMillis: 10000,
+    idleTimeoutMillis: 30000,
+    max: 20
 });
 
-db.connect((err) => {
-    if (err) {
-        console.error('❌ Erro ao conectar ao PostgreSQL:', err.message);
-        console.error('Connection string:', connectionString.replace(/:[^@]*@/, ':***@'));
-        process.exit(1);
-    } else {
-        console.log('✅ Conectado ao PostgreSQL Supabase');
-        initializeDatabase();
-    }
-});
+// Retry logic
+let retries = 0;
+const maxRetries = 3;
+
+function connectDB() {
+    db.connect((err) => {
+        if (err) {
+            retries++;
+            console.error(`❌ Erro ao conectar ao PostgreSQL (tentativa ${retries}/${maxRetries}):`, err.message);
+            console.error('Connection string:', connectionString.replace(/:[^@]*@/, ':***@'));
+            
+            if (retries < maxRetries) {
+                console.log(`⏳ Tentando novamente em 5 segundos...`);
+                setTimeout(connectDB, 5000);
+            } else {
+                console.error('❌ Falha ao conectar após 3 tentativas');
+                process.exit(1);
+            }
+        } else {
+            console.log('✅ Conectado ao PostgreSQL Supabase');
+            retries = 0;
+            initializeDatabase();
+        }
+    });
+}
+
+connectDB();
 
 // Inicializar banco de dados com todas as tabelas
 function initializeDatabase() {
