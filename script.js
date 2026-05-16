@@ -16,14 +16,13 @@ document.addEventListener('DOMContentLoaded', () => {
     // Se veio do QR Code (#fotos), abre o seletor de arquivos automaticamente
     if (window.location.hash === '#fotos') {
         setTimeout(() => {
-            const fileInput = document.getElementById('fileInput');
-            if (fileInput) {
-                // Scroll para a seção de fotos primeiro
-                const fotosSection = document.getElementById('fotos');
-                if (fotosSection) fotosSection.scrollIntoView({ behavior: 'smooth' });
-                // Abre o seletor de arquivos
-                setTimeout(() => fileInput.click(), 500);
-            }
+            const uploadArea = document.getElementById('uploadArea');
+            if (uploadArea) uploadArea.scrollIntoView({ behavior: 'smooth' });
+            // Abre o seletor de arquivos
+            setTimeout(() => {
+                const fileInput = document.getElementById('fileInput');
+                if (fileInput) fileInput.click();
+            }, 600);
         }, 1000);
     }
 });
