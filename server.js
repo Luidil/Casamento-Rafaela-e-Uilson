@@ -26,6 +26,10 @@ const db = new Client({
 db.connect((err) => {
     if (err) {
         console.error('❌ Erro ao conectar ao PostgreSQL:', err.message);
+        console.error('Host:', process.env.DB_HOST);
+        console.error('Port:', process.env.DB_PORT);
+        console.error('Database:', process.env.DB_NAME);
+        console.error('User:', process.env.DB_USER);
     } else {
         console.log('✅ Conectado ao PostgreSQL');
         initializeDatabase();
