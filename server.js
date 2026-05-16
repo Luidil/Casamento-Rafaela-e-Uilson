@@ -1,7 +1,7 @@
 /**
  * Servidor Local - Site de Casamento
  * Execute: node server.js
- * Banco: SQLite (casamento.db)
+ * Banco: PostgreSQL (Supabase)
  */
 
 const http = require('http');
@@ -9,9 +9,13 @@ const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
 const { Client } = require('pg');
+const nodemailer = require('nodemailer');
+const QRCode = require('qrcode');
+const PDFDocument = require('pdfkit');
+const multiparty = require('multiparty');
 
 // Configuração do PostgreSQL Supabase
-const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:Luidillindo123@@db.zuipsuyioiwiicghhubz.supabase.co:5432/postgres';
+const connectionString = process.env.DATABASE_URL || 'postgresql://postgres:Luidillindo123@db.zuipsuyioiwiicghhubz.supabase.co:5432/postgres';
 
 const db = new Client({
     connectionString: connectionString,
@@ -20,9 +24,11 @@ const db = new Client({
 
 db.connect((err) => {
     if (err) {
-        console.error('❌ Erro ao conectar ao Supabase:', err.message);
+        console.error('❌ Erro ao conectar ao PostgreSQL:', err.message);
+        console.error('Connection string:', connectionString.replace(/:[^@]*@/, ':***@'));
+        process.exit(1);
     } else {
-        console.log('✅ Conectado ao Supabase PostgreSQL');
+        console.log('✅ Conectado ao PostgreSQL Supabase');
         initializeDatabase();
     }
 });
@@ -165,179 +171,14 @@ function initializeDatabase() {
         `CREATE INDEX IF NOT EXISTS ix_fotos_galeria_id ON fotos_galeria(id_galeria)`
     ];
 
-    tables.forEach(sql => {
+    tables.forEach((sql, index) => {
         db.query(sql, (err) => {
             if (err && !err.message.includes('already exists')) {
-                console.error('❌ Erro ao criar tabela:', err.message);
+                console.error(`❌ Erro ao criar tabela ${index}:`, err.message);
             } else if (!err) {
-                console.log('✅ Tabela criada/verificada');
+                console.log(`✅ Tabela ${index} criada/verificada`);
             }
         });
-    });
-}
-            else console.log('✅ Tabela musicas pronta');
-        });
-
-        // Tabela de comentários
-        db.run(`
-            CREATE TABLE IF NOT EXISTS comentarios (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                id_convidado INTEGER,
-                nome TEXT NOT NULL,
-                email TEXT NOT NULL,
-                mensagem TEXT NOT NULL,
-                aprovado BOOLEAN DEFAULT 0,
-                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY(id_convidado) REFERENCES convidados(id) ON DELETE CASCADE
-            )
-        `, (err) => {
-            if (err) console.error('❌ Erro ao criar tabela comentarios:', err.message);
-            else console.log('✅ Tabela comentarios pronta');
-        });
-
-        // Tabela de galeria de fotos
-        db.run(`
-            CREATE TABLE IF NOT EXISTS galeria_fotos (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                titulo TEXT NOT NULL,
-                descricao TEXT,
-                categoria TEXT,
-                ordem INTEGER DEFAULT 0,
-                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        `, (err) => {
-            if (err) console.error('❌ Erro ao criar tabela galeria_fotos:', err.message);
-            else console.log('✅ Tabela galeria_fotos pronta');
-        });
-
-        // Tabela de fotos da galeria
-        db.run(`
-            CREATE TABLE IF NOT EXISTS fotos_galeria (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                id_galeria INTEGER NOT NULL,
-                nome_original TEXT NOT NULL,
-                nome_arquivo TEXT NOT NULL,
-                tipo_arquivo TEXT NOT NULL,
-                tamanho INTEGER NOT NULL,
-                url TEXT NOT NULL,
-                ordem INTEGER DEFAULT 0,
-                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY(id_galeria) REFERENCES galeria_fotos(id) ON DELETE CASCADE
-            )
-        `, (err) => {
-            if (err) console.error('❌ Erro ao criar tabela fotos_galeria:', err.message);
-            else console.log('✅ Tabela fotos_galeria pronta');
-        });
-
-        // Tabela de fotos dos convidados
-        db.run(`
-            CREATE TABLE IF NOT EXISTS fotos_convidados (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                id_convidado INTEGER NOT NULL,
-                nome_original TEXT NOT NULL,
-                nome_arquivo TEXT NOT NULL,
-                tipo_arquivo TEXT NOT NULL,
-                tamanho INTEGER NOT NULL,
-                url TEXT NOT NULL,
-                aprovado BOOLEAN DEFAULT 0,
-                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY(id_convidado) REFERENCES convidados(id) ON DELETE CASCADE
-            )
-        `, (err) => {
-            if (err) console.error('❌ Erro ao criar tabela fotos_convidados:', err.message);
-            else console.log('✅ Tabela fotos_convidados pronta');
-        });
-
-        // Tabela de cronograma
-        db.run(`
-            CREATE TABLE IF NOT EXISTS cronograma (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                horario TEXT NOT NULL,
-                evento TEXT NOT NULL,
-                descricao TEXT,
-                local TEXT,
-                ordem INTEGER DEFAULT 0,
-                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        `, (err) => {
-            if (err) console.error('❌ Erro ao criar tabela cronograma:', err.message);
-            else console.log('✅ Tabela cronograma pronta');
-        });
-
-        // Tabela de hospedagem
-        db.run(`
-            CREATE TABLE IF NOT EXISTS hospedagem (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                nome TEXT NOT NULL,
-                tipo TEXT,
-                endereco TEXT,
-                telefone TEXT,
-                email TEXT,
-                website TEXT,
-                descricao TEXT,
-                preco_aproximado TEXT,
-                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        `, (err) => {
-            if (err) console.error('❌ Erro ao criar tabela hospedagem:', err.message);
-            else console.log('✅ Tabela hospedagem pronta');
-        });
-
-        // Tabela de transporte
-        db.run(`
-            CREATE TABLE IF NOT EXISTS transporte (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                tipo TEXT,
-                saida_local TEXT,
-                saida_horario TEXT,
-                destino_local TEXT,
-                destino_horario TEXT,
-                capacidade INTEGER,
-                observacoes TEXT,
-                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        `, (err) => {
-            if (err) console.error('❌ Erro ao criar tabela transporte:', err.message);
-            else console.log('✅ Tabela transporte pronta');
-        });
-
-        // Tabela de logs
-        db.run(`
-            CREATE TABLE IF NOT EXISTS logs (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                tipo_acao TEXT NOT NULL,
-                descricao TEXT,
-                id_convidado INTEGER,
-                ip_address TEXT,
-                user_agent TEXT,
-                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY(id_convidado) REFERENCES convidados(id) ON DELETE SET NULL
-            )
-        `, (err) => {
-            if (err) console.error('❌ Erro ao criar tabela logs:', err.message);
-            else console.log('✅ Tabela logs pronta');
-        });
-
-        // Tabela de configurações
-        db.run(`
-            CREATE TABLE IF NOT EXISTS configuracoes (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                chave TEXT NOT NULL UNIQUE,
-                valor TEXT NOT NULL,
-                descricao TEXT,
-                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-                atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        `, (err) => {
-            if (err) console.error('❌ Erro ao criar tabela configuracoes:', err.message);
-            else console.log('✅ Tabela configuracoes pronta');
-        });
-
-        // Criar índices
-        db.run('CREATE INDEX IF NOT EXISTS ix_convidados_email ON convidados(email)');
-        db.run('CREATE INDEX IF NOT EXISTS ix_convidados_presenca ON convidados(presenca)');
-        db.run('CREATE INDEX IF NOT EXISTS ix_fotos_convidado ON fotos(id_convidado)');
-        db.run('CREATE INDEX IF NOT EXISTS ix_fotos_galeria_id ON fotos_galeria(id_galeria)');
     });
 }
 
@@ -488,23 +329,23 @@ async function handleConfirmacao(data) {
     try {
         const { nome, email, presenca, mensagem, fotoUrl } = data;
         
-        if (!nome || !email || !presenca) {
+        if (!nome || !email || presenca === undefined) {
             return { success: false, message: 'Dados incompletos' };
         }
 
-        const presencaValue = presenca === 'sim' ? 1 : 0;
+        const presencaValue = presenca === 'sim' || presenca === true ? true : false;
         const msgValue = mensagem || null;
         const fotoValue = fotoUrl || null;
 
         // Verificar se já existe
-        const existing = await executeQuery('SELECT id FROM convidados WHERE email = ?', [email]);
+        const existing = await executeQuery('SELECT id FROM convidados WHERE email = $1', [email]);
         
         if (existing.rows.length > 0) {
             // Atualizar existente
             await executeQuery(`
                 UPDATE convidados 
-                SET nome = ?, presenca = ?, mensagem = ?, foto_url = COALESCE(?, foto_url), data_confirmacao = CURRENT_TIMESTAMP
-                WHERE email = ?
+                SET nome = $1, presenca = $2, mensagem = $3, foto_url = COALESCE($4, foto_url), data_confirmacao = CURRENT_TIMESTAMP
+                WHERE email = $5
             `, [nome, presencaValue, msgValue, fotoValue, email]);
             
             // Enviar email se confirmou presença
@@ -517,7 +358,7 @@ async function handleConfirmacao(data) {
             // Inserir novo
             await executeQuery(`
                 INSERT INTO convidados (nome, email, presenca, mensagem, foto_url)
-                VALUES (?, ?, ?, ?, ?)
+                VALUES ($1, $2, $3, $4, $5)
             `, [nome, email, presencaValue, msgValue, fotoValue]);
             
             // Enviar email se confirmou presença
@@ -618,7 +459,6 @@ async function enviarEmailConfirmacao(nome, email) {
         console.log(`✅ Email enviado para ${email}`);
     } catch (error) {
         console.error('⚠️ Erro ao enviar email (continuando mesmo assim):', error.message);
-        // Não interrompe o fluxo se o email falhar
     }
 }
 
@@ -626,7 +466,7 @@ async function enviarEmailConfirmacao(nome, email) {
 async function handleListarConfirmacoes() {
     try {
         const result = await executeQuery(`
-            SELECT * FROM convidados WHERE presenca = 1 ORDER BY data_confirmacao DESC
+            SELECT * FROM convidados WHERE presenca = true ORDER BY data_confirmacao DESC
         `);
         
         const total = await executeQuery('SELECT COUNT(*) as count FROM convidados');
@@ -650,8 +490,8 @@ async function handleListarTodosConvidados() {
             FROM convidados ORDER BY data_confirmacao DESC
         `);
         
-        const confirmados = result.rows.filter(c => c.presenca === 1);
-        const recusados = result.rows.filter(c => c.presenca === 0);
+        const confirmados = result.rows.filter(c => c.presenca === true);
+        const recusados = result.rows.filter(c => c.presenca === false);
         
         return { 
             success: true, 
@@ -782,91 +622,63 @@ const server = http.createServer(async (req, res) => {
                 res.end(JSON.stringify({ success: false, message: 'Content-Type deve ser multipart/form-data' }));
                 return;
             }
-            
-            const form = new multiparty.Form({ 
-                uploadDir: uploadsDir,
-                maxFilesSize: 500 * 1024 * 1024 // 500MB por arquivo
-            });
+
+            const form = new multiparty.Form({ uploadDir: uploadsDir });
             form.parse(req, (err, fields, files) => {
                 if (err) {
                     res.writeHead(400);
-                    res.end(JSON.stringify({ success: false, message: 'Erro ao processar upload' }));
+                    res.end(JSON.stringify({ success: false, message: 'Erro ao fazer upload' }));
                     return;
                 }
-                
-                const file = files.file && files.file[0];
-                if (!file) {
-                    res.writeHead(400);
-                    res.end(JSON.stringify({ success: false, message: 'Nenhum arquivo enviado' }));
-                    return;
-                }
-                
-                const fotoUrl = '/uploads/' + path.basename(file.path);
+
+                const uploadedFiles = files.file || [];
+                const results = uploadedFiles.map(file => ({
+                    id: Date.now() + Math.random(),
+                    name: path.basename(file.path),
+                    url: `/uploads/${path.basename(file.path)}`,
+                    type: file.headers['content-type'].includes('video') ? 'video' : 'image'
+                }));
+
                 res.writeHead(200);
-                res.end(JSON.stringify({ success: true, url: fotoUrl }));
+                res.end(JSON.stringify({ success: true, files: results }));
             });
             return;
         }
         
-        // 404 para APIs desconhecidas
         res.writeHead(404);
-        res.end(JSON.stringify({ success: false, message: 'API não encontrada' }));
+        res.end(JSON.stringify({ success: false, message: 'Rota não encontrada' }));
         return;
     }
     
-    // Arquivos estáticos
-    let filePath = req.url.split('?')[0];
+    // Servir arquivos estáticos
+    let filePath = path.join(BASE_DIR, req.url === '/' ? 'index.html' : req.url);
     
-    if (filePath === '/') {
-        filePath = '/index.html';
+    // Prevenir directory traversal
+    if (!filePath.startsWith(BASE_DIR)) {
+        res.writeHead(403);
+        res.end('Acesso negado');
+        return;
     }
     
-    // Security: prevent directory traversal
-    filePath = path.normalize(filePath).replace(/^(\.\.[\/\\])+/, '');
-    
-    const fullPath = path.join(BASE_DIR, filePath);
-    const ext = path.extname(fullPath).toLowerCase();
-    const contentType = MIME_TYPES[ext] || 'application/octet-stream';
-    
-    fs.readFile(fullPath, (err, content) => {
-        if (err) {
-            if (err.code === 'ENOENT') {
-                res.writeHead(404, { 'Content-Type': 'text/html' });
-                res.end('Página não encontrada');
-            } else {
-                res.writeHead(500);
-                res.end('Erro no servidor');
-            }
-        } else {
-            res.writeHead(200, { 'Content-Type': contentType });
-            res.end(content);
+    fs.stat(filePath, (err, stats) => {
+        if (err || !stats.isFile()) {
+            res.writeHead(404);
+            res.end('Arquivo não encontrado');
+            return;
         }
+        
+        const ext = path.extname(filePath).toLowerCase();
+        const contentType = MIME_TYPES[ext] || 'application/octet-stream';
+        
+        res.writeHead(200, { 'Content-Type': contentType });
+        fs.createReadStream(filePath).pipe(res);
     });
 });
 
 server.listen(PORT, () => {
     console.log('========================================');
     console.log('🎉 Servidor do Site de Casamento');
-    console.log(`   Acesse: http://localhost:${PORT}`);
-    console.log('   Pressione Ctrl+C para parar');
+    console.log(`Acesse: http://localhost:${PORT}`);
+    console.log('Pressione Ctrl+C para parar');
     console.log('========================================');
-});
-
-server.on('error', (err) => {
-    if (err.code === 'EADDRINUSE') {
-        console.error(`❌ Porta ${PORT} já está em uso!`);
-        console.error(`   Tente usar outra porta ou pare o processo existente.`);
-    } else {
-        console.error('❌ Erro no servidor:', err);
-    }
-    process.exit(1);
-});
-
-// Fechar conexão ao parar
-process.on('SIGINT', () => {
-    db.close((err) => {
-        if (err) console.error('Erro ao fechar banco:', err);
-        else console.log('✅ Banco de dados fechado');
-        process.exit();
-    });
 });
