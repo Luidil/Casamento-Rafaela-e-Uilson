@@ -1,12 +1,10 @@
 const { createClient } = require('@supabase/supabase-js');
 const nodemailer = require('nodemailer');
 
-// Supabase
 const supabaseUrl = 'https://zuipsuyioiwiicghhubz.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1aXBzdXlpb2l3aWljZ2hodWJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3MTU4NjI5NzcsImV4cCI6MTczMTQxODk3N30.IjVQBvAWCZ0gTYdp';
+const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1aXBzdXlpb2l3aWljZ2dodWJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MTA5NTcsImV4cCI6MjA5NDQ4Njk1N30.Bel4q0iqYPktkLhrkqRSEOdfTbmrfvsjK6jf2ZtS_v4';
 const supabase = createClient(supabaseUrl, supabaseKey);
 
-// Email
 const transporter = nodemailer.createTransport({
     service: process.env.EMAIL_SERVICE || 'gmail',
     auth: {
@@ -102,7 +100,6 @@ exports.handler = async (event, context) => {
 
             const presencaValue = presenca === 'sim' || presenca === true;
 
-            // Verificar se já existe
             const { data: existing } = await supabase
                 .from('convidados')
                 .select('id')
@@ -110,7 +107,6 @@ exports.handler = async (event, context) => {
                 .single();
 
             if (existing) {
-                // Atualizar
                 await supabase
                     .from('convidados')
                     .update({
@@ -121,7 +117,6 @@ exports.handler = async (event, context) => {
                     })
                     .eq('email', email);
             } else {
-                // Inserir
                 await supabase
                     .from('convidados')
                     .insert({
@@ -132,7 +127,6 @@ exports.handler = async (event, context) => {
                     });
             }
 
-            // Enviar email se confirmou
             if (presencaValue) {
                 await enviarEmailConfirmacao(nome, email);
             }
