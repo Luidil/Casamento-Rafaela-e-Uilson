@@ -90,20 +90,21 @@ exports.handler = async (event, context) => {
             const data = JSON.parse(event.body);
             const { nome, email, presenca, mensagem } = data;
 
-            if (!nome || !email || presenca === undefined) {
+            if (!nome || presenca === undefined) {
                 return {
                     statusCode: 400,
                     headers,
-                    body: JSON.stringify({ success: false, message: 'Dados incompletos' })
+                    body: JSON.stringify({ success: false, message: 'Nome e presença são obrigatórios' })
                 };
             }
 
+            const emailValue = email || `guest-${Date.now()}@casamento.local`;
             const presencaValue = presenca === 'sim' || presenca === true;
 
             const { data: existing } = await supabase
                 .from('convidados')
                 .select('id')
-                .eq('email', email)
+                .eq('email', emailValue)
                 .single();
 
             if (existing) {
@@ -115,19 +116,19 @@ exports.handler = async (event, context) => {
                         mensagem: mensagem || null,
                         data_confirmacao: new Date().toISOString()
                     })
-                    .eq('email', email);
+                    .eq('email', emailValue);
             } else {
                 await supabase
                     .from('convidados')
                     .insert({
                         nome,
-                        email,
+                        email: emailValue,
                         presenca: presencaValue,
                         mensagem: mensagem || null
                     });
             }
 
-            if (presencaValue) {
+            if (presencaValue && email) {
                 await enviarEmailConfirmacao(nome, email);
             }
 
