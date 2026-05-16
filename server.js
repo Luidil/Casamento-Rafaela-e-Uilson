@@ -1,263 +1,180 @@
 /**
  * Servidor Local - Site de Casamento
  * Execute: node server.js
- * Banco: SQLite (casamento.db)
+ * Banco: PostgreSQL
  */
 
 const http = require('http');
 const fs = require('fs');
 const path = require('path');
 require('dotenv').config();
-const sqlite3 = require('sqlite3').verbose();
+const { Client } = require('pg');
 const multiparty = require('multiparty');
 const PDFDocument = require('pdfkit');
 const QRCode = require('qrcode');
 const nodemailer = require('nodemailer');
 
-// Configuração do SQLite
-const db = new sqlite3.Database(path.join(__dirname, 'casamento.db'), (err) => {
+// Configuração do PostgreSQL
+const connectionString = process.env.DATABASE_URL || `postgresql://${process.env.DB_USER}:${process.env.DB_PASSWORD}@${process.env.DB_HOST}:${process.env.DB_PORT}/${process.env.DB_NAME}`;
+
+const db = new Client({
+    connectionString: connectionString,
+    ssl: process.env.NODE_ENV === 'production' ? { rejectUnauthorized: false } : false
+});
+
+db.connect((err) => {
     if (err) {
-        console.error('❌ Erro ao conectar ao SQLite:', err.message);
+        console.error('❌ Erro ao conectar ao PostgreSQL:', err.message);
+        console.error('Connection String:', connectionString.replace(/:[^:]*@/, ':***@'));
     } else {
-        console.log('✅ Conectado ao SQLite (casamento.db)');
+        console.log('✅ Conectado ao PostgreSQL');
         initializeDatabase();
     }
 });
 
 // Inicializar banco de dados com todas as tabelas
 function initializeDatabase() {
-    db.serialize(() => {
-        // Tabela de convidados
-        db.run(`
-            CREATE TABLE IF NOT EXISTS convidados (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                nome TEXT NOT NULL,
-                email TEXT NOT NULL UNIQUE,
-                presenca BOOLEAN NOT NULL,
-                mensagem TEXT,
-                foto_url TEXT,
-                data_confirmacao DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        `, (err) => {
-            if (err) console.error('❌ Erro ao criar tabela convidados:', err.message);
-            else console.log('✅ Tabela convidados pronta');
-        });
+    const tables = [
+        `CREATE TABLE IF NOT EXISTS convidados (
+            id SERIAL PRIMARY KEY,
+            nome TEXT NOT NULL,
+            email TEXT NOT NULL UNIQUE,
+            presenca BOOLEAN NOT NULL,
+            mensagem TEXT,
+            foto_url TEXT,
+            data_confirmacao TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`,
+        `CREATE TABLE IF NOT EXISTS fotos (
+            id SERIAL PRIMARY KEY,
+            nome_original TEXT NOT NULL,
+            nome_arquivo TEXT NOT NULL,
+            tipo_arquivo TEXT NOT NULL,
+            tamanho INTEGER NOT NULL,
+            url TEXT NOT NULL,
+            id_convidado INTEGER REFERENCES convidados(id) ON DELETE SET NULL,
+            criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`,
+        `CREATE TABLE IF NOT EXISTS presentes (
+            id SERIAL PRIMARY KEY,
+            nome TEXT NOT NULL,
+            descricao TEXT,
+            categoria TEXT,
+            preco REAL,
+            link_compra TEXT,
+            imagem_url TEXT,
+            quantidade_total INTEGER DEFAULT 1,
+            quantidade_comprada INTEGER DEFAULT 0,
+            criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`,
+        `CREATE TABLE IF NOT EXISTS musicas (
+            id SERIAL PRIMARY KEY,
+            titulo TEXT NOT NULL,
+            artista TEXT NOT NULL,
+            solicitado_por TEXT,
+            id_convidado INTEGER REFERENCES convidados(id) ON DELETE SET NULL,
+            observacoes TEXT,
+            criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`,
+        `CREATE TABLE IF NOT EXISTS comentarios (
+            id SERIAL PRIMARY KEY,
+            id_convidado INTEGER REFERENCES convidados(id) ON DELETE CASCADE,
+            nome TEXT NOT NULL,
+            email TEXT NOT NULL,
+            mensagem TEXT NOT NULL,
+            aprovado BOOLEAN DEFAULT false,
+            criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`,
+        `CREATE TABLE IF NOT EXISTS galeria_fotos (
+            id SERIAL PRIMARY KEY,
+            titulo TEXT NOT NULL,
+            descricao TEXT,
+            categoria TEXT,
+            ordem INTEGER DEFAULT 0,
+            criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`,
+        `CREATE TABLE IF NOT EXISTS fotos_galeria (
+            id SERIAL PRIMARY KEY,
+            id_galeria INTEGER NOT NULL REFERENCES galeria_fotos(id) ON DELETE CASCADE,
+            nome_original TEXT NOT NULL,
+            nome_arquivo TEXT NOT NULL,
+            tipo_arquivo TEXT NOT NULL,
+            tamanho INTEGER NOT NULL,
+            url TEXT NOT NULL,
+            ordem INTEGER DEFAULT 0,
+            criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`,
+        `CREATE TABLE IF NOT EXISTS fotos_convidados (
+            id SERIAL PRIMARY KEY,
+            id_convidado INTEGER NOT NULL REFERENCES convidados(id) ON DELETE CASCADE,
+            nome_original TEXT NOT NULL,
+            nome_arquivo TEXT NOT NULL,
+            tipo_arquivo TEXT NOT NULL,
+            tamanho INTEGER NOT NULL,
+            url TEXT NOT NULL,
+            aprovado BOOLEAN DEFAULT false,
+            criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`,
+        `CREATE TABLE IF NOT EXISTS cronograma (
+            id SERIAL PRIMARY KEY,
+            horario TEXT NOT NULL,
+            evento TEXT NOT NULL,
+            descricao TEXT,
+            local TEXT,
+            ordem INTEGER DEFAULT 0,
+            criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`,
+        `CREATE TABLE IF NOT EXISTS hospedagem (
+            id SERIAL PRIMARY KEY,
+            nome TEXT NOT NULL,
+            tipo TEXT,
+            endereco TEXT,
+            telefone TEXT,
+            email TEXT,
+            website TEXT,
+            descricao TEXT,
+            preco_aproximado TEXT,
+            criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`,
+        `CREATE TABLE IF NOT EXISTS transporte (
+            id SERIAL PRIMARY KEY,
+            tipo TEXT,
+            saida_local TEXT,
+            saida_horario TEXT,
+            destino_local TEXT,
+            destino_horario TEXT,
+            capacidade INTEGER,
+            observacoes TEXT,
+            criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`,
+        `CREATE TABLE IF NOT EXISTS logs (
+            id SERIAL PRIMARY KEY,
+            tipo_acao TEXT NOT NULL,
+            descricao TEXT,
+            id_convidado INTEGER REFERENCES convidados(id) ON DELETE SET NULL,
+            ip_address TEXT,
+            user_agent TEXT,
+            criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`,
+        `CREATE TABLE IF NOT EXISTS configuracoes (
+            id SERIAL PRIMARY KEY,
+            chave TEXT NOT NULL UNIQUE,
+            valor TEXT NOT NULL,
+            descricao TEXT,
+            criado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP,
+            atualizado_em TIMESTAMP DEFAULT CURRENT_TIMESTAMP
+        )`,
+        `CREATE INDEX IF NOT EXISTS ix_convidados_email ON convidados(email)`,
+        `CREATE INDEX IF NOT EXISTS ix_convidados_presenca ON convidados(presenca)`,
+        `CREATE INDEX IF NOT EXISTS ix_fotos_convidado ON fotos(id_convidado)`,
+        `CREATE INDEX IF NOT EXISTS ix_fotos_galeria_id ON fotos_galeria(id_galeria)`
+    ];
 
-        // Tabela de fotos
-        db.run(`
-            CREATE TABLE IF NOT EXISTS fotos (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                nome_original TEXT NOT NULL,
-                nome_arquivo TEXT NOT NULL,
-                tipo_arquivo TEXT NOT NULL,
-                tamanho INTEGER NOT NULL,
-                url TEXT NOT NULL,
-                id_convidado INTEGER,
-                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY(id_convidado) REFERENCES convidados(id) ON DELETE SET NULL
-            )
-        `, (err) => {
-            if (err) console.error('❌ Erro ao criar tabela fotos:', err.message);
-            else console.log('✅ Tabela fotos pronta');
+    tables.forEach(sql => {
+        db.query(sql, (err) => {
+            if (err) console.error('❌ Erro ao criar tabela:', err.message);
+            else console.log('✅ Tabela criada/verificada');
         });
-
-        // Tabela de presentes
-        db.run(`
-            CREATE TABLE IF NOT EXISTS presentes (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                nome TEXT NOT NULL,
-                descricao TEXT,
-                categoria TEXT,
-                preco REAL,
-                link_compra TEXT,
-                imagem_url TEXT,
-                quantidade_total INTEGER DEFAULT 1,
-                quantidade_comprada INTEGER DEFAULT 0,
-                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-                atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        `, (err) => {
-            if (err) console.error('❌ Erro ao criar tabela presentes:', err.message);
-            else console.log('✅ Tabela presentes pronta');
-        });
-
-        // Tabela de músicas
-        db.run(`
-            CREATE TABLE IF NOT EXISTS musicas (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                titulo TEXT NOT NULL,
-                artista TEXT NOT NULL,
-                solicitado_por TEXT,
-                id_convidado INTEGER,
-                observacoes TEXT,
-                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY(id_convidado) REFERENCES convidados(id) ON DELETE SET NULL
-            )
-        `, (err) => {
-            if (err) console.error('❌ Erro ao criar tabela musicas:', err.message);
-            else console.log('✅ Tabela musicas pronta');
-        });
-
-        // Tabela de comentários
-        db.run(`
-            CREATE TABLE IF NOT EXISTS comentarios (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                id_convidado INTEGER,
-                nome TEXT NOT NULL,
-                email TEXT NOT NULL,
-                mensagem TEXT NOT NULL,
-                aprovado BOOLEAN DEFAULT 0,
-                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY(id_convidado) REFERENCES convidados(id) ON DELETE CASCADE
-            )
-        `, (err) => {
-            if (err) console.error('❌ Erro ao criar tabela comentarios:', err.message);
-            else console.log('✅ Tabela comentarios pronta');
-        });
-
-        // Tabela de galeria de fotos
-        db.run(`
-            CREATE TABLE IF NOT EXISTS galeria_fotos (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                titulo TEXT NOT NULL,
-                descricao TEXT,
-                categoria TEXT,
-                ordem INTEGER DEFAULT 0,
-                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        `, (err) => {
-            if (err) console.error('❌ Erro ao criar tabela galeria_fotos:', err.message);
-            else console.log('✅ Tabela galeria_fotos pronta');
-        });
-
-        // Tabela de fotos da galeria
-        db.run(`
-            CREATE TABLE IF NOT EXISTS fotos_galeria (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                id_galeria INTEGER NOT NULL,
-                nome_original TEXT NOT NULL,
-                nome_arquivo TEXT NOT NULL,
-                tipo_arquivo TEXT NOT NULL,
-                tamanho INTEGER NOT NULL,
-                url TEXT NOT NULL,
-                ordem INTEGER DEFAULT 0,
-                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY(id_galeria) REFERENCES galeria_fotos(id) ON DELETE CASCADE
-            )
-        `, (err) => {
-            if (err) console.error('❌ Erro ao criar tabela fotos_galeria:', err.message);
-            else console.log('✅ Tabela fotos_galeria pronta');
-        });
-
-        // Tabela de fotos dos convidados
-        db.run(`
-            CREATE TABLE IF NOT EXISTS fotos_convidados (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                id_convidado INTEGER NOT NULL,
-                nome_original TEXT NOT NULL,
-                nome_arquivo TEXT NOT NULL,
-                tipo_arquivo TEXT NOT NULL,
-                tamanho INTEGER NOT NULL,
-                url TEXT NOT NULL,
-                aprovado BOOLEAN DEFAULT 0,
-                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY(id_convidado) REFERENCES convidados(id) ON DELETE CASCADE
-            )
-        `, (err) => {
-            if (err) console.error('❌ Erro ao criar tabela fotos_convidados:', err.message);
-            else console.log('✅ Tabela fotos_convidados pronta');
-        });
-
-        // Tabela de cronograma
-        db.run(`
-            CREATE TABLE IF NOT EXISTS cronograma (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                horario TEXT NOT NULL,
-                evento TEXT NOT NULL,
-                descricao TEXT,
-                local TEXT,
-                ordem INTEGER DEFAULT 0,
-                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        `, (err) => {
-            if (err) console.error('❌ Erro ao criar tabela cronograma:', err.message);
-            else console.log('✅ Tabela cronograma pronta');
-        });
-
-        // Tabela de hospedagem
-        db.run(`
-            CREATE TABLE IF NOT EXISTS hospedagem (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                nome TEXT NOT NULL,
-                tipo TEXT,
-                endereco TEXT,
-                telefone TEXT,
-                email TEXT,
-                website TEXT,
-                descricao TEXT,
-                preco_aproximado TEXT,
-                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        `, (err) => {
-            if (err) console.error('❌ Erro ao criar tabela hospedagem:', err.message);
-            else console.log('✅ Tabela hospedagem pronta');
-        });
-
-        // Tabela de transporte
-        db.run(`
-            CREATE TABLE IF NOT EXISTS transporte (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                tipo TEXT,
-                saida_local TEXT,
-                saida_horario TEXT,
-                destino_local TEXT,
-                destino_horario TEXT,
-                capacidade INTEGER,
-                observacoes TEXT,
-                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        `, (err) => {
-            if (err) console.error('❌ Erro ao criar tabela transporte:', err.message);
-            else console.log('✅ Tabela transporte pronta');
-        });
-
-        // Tabela de logs
-        db.run(`
-            CREATE TABLE IF NOT EXISTS logs (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                tipo_acao TEXT NOT NULL,
-                descricao TEXT,
-                id_convidado INTEGER,
-                ip_address TEXT,
-                user_agent TEXT,
-                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-                FOREIGN KEY(id_convidado) REFERENCES convidados(id) ON DELETE SET NULL
-            )
-        `, (err) => {
-            if (err) console.error('❌ Erro ao criar tabela logs:', err.message);
-            else console.log('✅ Tabela logs pronta');
-        });
-
-        // Tabela de configurações
-        db.run(`
-            CREATE TABLE IF NOT EXISTS configuracoes (
-                id INTEGER PRIMARY KEY AUTOINCREMENT,
-                chave TEXT NOT NULL UNIQUE,
-                valor TEXT NOT NULL,
-                descricao TEXT,
-                criado_em DATETIME DEFAULT CURRENT_TIMESTAMP,
-                atualizado_em DATETIME DEFAULT CURRENT_TIMESTAMP
-            )
-        `, (err) => {
-            if (err) console.error('❌ Erro ao criar tabela configuracoes:', err.message);
-            else console.log('✅ Tabela configuracoes pronta');
-        });
-
-        // Criar índices
-        db.run('CREATE INDEX IF NOT EXISTS ix_convidados_email ON convidados(email)');
-        db.run('CREATE INDEX IF NOT EXISTS ix_convidados_presenca ON convidados(presenca)');
-        db.run('CREATE INDEX IF NOT EXISTS ix_fotos_convidado ON fotos(id_convidado)');
-        db.run('CREATE INDEX IF NOT EXISTS ix_fotos_galeria_id ON fotos_galeria(id_galeria)');
     });
 }
 
@@ -281,30 +198,21 @@ if (process.env.EMAIL_USER && process.env.EMAIL_PASSWORD) {
     });
 }
 
-// Função auxiliar para executar queries com SQLite
+// Função auxiliar para executar queries com PostgreSQL
 function executeQuery(sql, params = []) {
     return new Promise((resolve, reject) => {
-        const isSelect = sql.trim().toUpperCase().startsWith('SELECT');
-        
-        if (isSelect) {
-            db.all(sql, params, (err, rows) => {
-                if (err) {
-                    console.error('❌ Erro na query SELECT:', err.message);
-                    reject(err);
-                } else {
-                    resolve({ rows: rows || [] });
-                }
-            });
-        } else {
-            db.run(sql, params, function(err) {
-                if (err) {
-                    console.error('❌ Erro na query:', err.message);
-                    reject(err);
-                } else {
-                    resolve({ lastID: this.lastID, changes: this.changes });
-                }
-            });
-        }
+        db.query(sql, params, (err, result) => {
+            if (err) {
+                console.error('❌ Erro na query:', err.message);
+                reject(err);
+            } else {
+                resolve({ 
+                    rows: result.rows || [],
+                    lastID: result.rows?.[0]?.id,
+                    changes: result.rowCount || 0
+                });
+            }
+        });
     });
 }
 
