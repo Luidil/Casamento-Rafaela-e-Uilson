@@ -88,7 +88,6 @@ function initCarousel() {
         // Carrega imagens da pasta 'Fotos'
         const imageFiles = [
             '/Fotos/1.png',
-            '/Fotos/2.png',
             '/Fotos/3.png',
             '/Fotos/5.jpg',
             '/Fotos/6.jpg',
