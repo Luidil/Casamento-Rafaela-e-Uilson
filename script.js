@@ -37,7 +37,7 @@ const appState = {
  * Contagem Regressiva para o Casamento
  */
 function initCountdown() {
-    const weddingDate = new Date('2026-09-01T11:30:00').getTime();
+    const weddingDate = new Date('2026-09-01T11:00:00').getTime();
     
     function updateCountdown() {
         const now = new Date().getTime();
