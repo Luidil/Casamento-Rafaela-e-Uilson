@@ -85,27 +85,25 @@ function initCarousel() {
     loadCarouselImages();
     
     function loadCarouselImages() {
-        // Carrega imagens da pasta 'Fotos'
+        // Carrega imagens da pasta 'Fotos' (extensões corretas)
         const imageFiles = [
             '/Fotos/1.png',
-            '/Fotos/3.png',
+            '/Fotos/2.jpg',
+            '/Fotos/3.jpg',
+            '/Fotos/4.jpg',
             '/Fotos/5.jpg',
-            '/Fotos/6.jpg',
-            '/Fotos/7.jpg',
+            '/Fotos/6.png',
+            '/Fotos/7.png',
             '/Fotos/8.jpg',
-            '/Fotos/9.png',
-            '/Fotos/10.png',
-            '/Fotos/11.png',
+            '/Fotos/9.jpg',
+            '/Fotos/10.jpg',
+            '/Fotos/11.jpg',
+            '/Fotos/12.jpg',
+            '/Fotos/13.jpg',
             '/Fotos/14.jpg',
             '/Fotos/15.jpg',
             '/Fotos/16.jpg',
-            '/Fotos/17.jpg',
-            '/Fotos/18.jpg',
-            '/Fotos/19.jpg',
-            '/Fotos/20.jpg',
-            '/Fotos/21.jpg',
-            '/Fotos/22.jpg',
-            '/Fotos/23.jpg'
+            '/Fotos/17.png'
         ];
         
         appState.carouselImages = imageFiles;
@@ -116,11 +114,15 @@ function initCarousel() {
         carouselContainer.innerHTML = '';
         carouselDots.innerHTML = '';
         
+        // Fotos que precisam de object-position: top (evitar cortar cabeça)
+        const topPositionImages = ['/Fotos/12.jpg', '/Fotos/14.jpg', '/Fotos/15.jpg'];
+        
         appState.carouselImages.forEach((image, index) => {
             // Cria slide
             const slide = document.createElement('div');
             slide.className = `carousel-slide ${index === 0 ? 'active' : ''}`;
-            slide.innerHTML = `<img src="${image}" alt="Foto ${index + 1}" class="carousel-image" onerror="this.src='/Fotos/1.png'">`;
+            const objectPos = topPositionImages.includes(image) ? 'object-position: top;' : '';
+            slide.innerHTML = `<img src="${image}" alt="Foto ${index + 1}" class="carousel-image" style="${objectPos}">`;
             carouselContainer.appendChild(slide);
             
             // Cria dot

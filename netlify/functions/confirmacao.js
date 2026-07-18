@@ -1,10 +1,9 @@
-const { createClient } = require('@supabase/supabase-js');
+const { Pool } = require('pg');
 const nodemailer = require('nodemailer');
 
-const supabase = createClient(
-    'https://zuipsuyioiwiicghhubz.supabase.co',
-    'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1aXBzdXlpb2l3aWljZ2dodWJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MTA5NTcsImV4cCI6MjA5NDQ4Njk1N30.Bel4q0iqYPktkLhrkqRSEOdfTbmrfvsjK6jf2ZtS_v4'
-);
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL || 'postgresql://casamento:casamento123@localhost:5433/casamento_db'
+});
 
 async function enviarEmail(nome, email) {
     try {
@@ -47,6 +46,7 @@ exports.handler = async (event) => {
     if (event.httpMethod === 'OPTIONS') return { statusCode: 200, headers };
     if (event.httpMethod !== 'POST') return { statusCode: 405, headers, body: JSON.stringify({ success: false }) };
 
+    let client;
     try {
         const { nome, email, presenca, mensagem } = JSON.parse(event.body);
 
@@ -57,25 +57,25 @@ exports.handler = async (event) => {
         const emailValue = email || `guest-${Date.now()}@casamento.local`;
         const presencaValue = presenca === 'sim' || presenca === true;
 
-        // Verificar se já existe
-        const { data: existing } = await supabase
-            .from('convidados')
-            .select('id')
-            .eq('email', emailValue)
-            .maybeSingle();
+        client = await pool.connect();
 
-        if (existing) {
-            const { error } = await supabase
-                .from('convidados')
-                .update({ nome, presenca: presencaValue, mensagem: mensagem || null, data_confirmacao: new Date().toISOString() })
-                .eq('email', emailValue);
-            if (error) throw new Error(error.message);
+        // Verificar se já existe
+        const existing = await client.query(
+            'SELECT id FROM convidados WHERE email = $1',
+            [emailValue]
+        );
+
+        if (existing.rows.length > 0) {
+            await client.query(
+                'UPDATE convidados SET nome = $1, presenca = $2, mensagem = $3, data_confirmacao = NOW() WHERE email = $4',
+                [nome, presencaValue, mensagem || null, emailValue]
+            );
             console.log('Atualizado:', nome);
         } else {
-            const { error } = await supabase
-                .from('convidados')
-                .insert({ nome, email: emailValue, presenca: presencaValue, mensagem: mensagem || null });
-            if (error) throw new Error(error.message);
+            await client.query(
+                'INSERT INTO convidados (nome, email, presenca, mensagem) VALUES ($1, $2, $3, $4)',
+                [nome, emailValue, presencaValue, mensagem || null]
+            );
             console.log('Inserido:', nome);
         }
 
@@ -85,5 +85,7 @@ exports.handler = async (event) => {
     } catch (error) {
         console.error('Erro:', error.message);
         return { statusCode: 500, headers, body: JSON.stringify({ success: false, message: error.message }) };
+    } finally {
+        if (client) client.release();
     }
 };

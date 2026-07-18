@@ -1,0 +1,19 @@
+version: '3.8'
+
+services:
+  postgres-casamento:
+    image: postgres:16-alpine
+    container_name: casamento-postgres
+    restart: unless-stopped
+    environment:
+      POSTGRES_USER: casamento
+      POSTGRES_PASSWORD: casamento123
+      POSTGRES_DB: casamento_db
+    ports:
+      - "5433:5432"
+    volumes:
+      - casamento_data:/var/lib/postgresql/data
+      - ./init.sql:/docker-entrypoint-initdb.d/init.sql
+
+volumes:
+  casamento_data:
