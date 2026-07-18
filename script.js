@@ -3,6 +3,9 @@
  * Funcionalidades: RSVP Form, Upload de Fotos, Navegação
  */
 
+// Base URL para as functions - detecta se é dev local ou produção
+const API_BASE = window.location.port === '8888' ? 'http://localhost:9999' : '';
+
 document.addEventListener('DOMContentLoaded', () => {
     // Inicializa todas as funcionalidades
     initCountdown();
@@ -302,7 +305,7 @@ function initRSVPForm() {
  * Envia os dados para a API (Netlify Function)
  */
 async function simulateRSVPSubmit(data) {
-    const response = await fetch('/.netlify/functions/confirmacao', {
+    const response = await fetch(`${API_BASE}/.netlify/functions/confirmacao`, {
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify(data)
@@ -426,7 +429,7 @@ function initPhotoUpload() {
 
             progressFill.style.width = '50%';
 
-            const response = await fetch('/.netlify/functions/upload', {
+            const response = await fetch(`${API_BASE}/.netlify/functions/upload`, {
                 method: 'POST',
                 headers: { 'Content-Type': 'application/json' },
                 body: JSON.stringify({
@@ -533,7 +536,7 @@ function initPhotoUpload() {
         
         modalConfirm.onclick = async () => {
             try {
-                await fetch('/.netlify/functions/upload', {
+                await fetch(`${API_BASE}/.netlify/functions/upload`, {
                     method: 'DELETE',
                     headers: { 'Content-Type': 'application/json' },
                     body: JSON.stringify({ fileName: fileIdentifier })
@@ -616,7 +619,7 @@ function initPhotoUpload() {
     
     function loadFilesFromStorage() {
         try {
-            fetch('/.netlify/functions/upload')
+            fetch(`${API_BASE}/.netlify/functions/upload`)
                 .then(res => res.json())
                 .then(data => {
                     if (data.success && data.files) {

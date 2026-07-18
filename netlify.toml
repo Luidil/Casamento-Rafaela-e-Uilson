@@ -2,9 +2,12 @@
   command = "npm install"
   functions = "netlify/functions"
 
+[build.environment]
+  NODE_VERSION = "18"
+
 [functions]
-  node_bundler = "zisi"
-  included_files = ["node_modules/@supabase/**"]
+  node_bundler = "esbuild"
+  included_files = ["node_modules/**"]
 
 [[redirects]]
   from = "/api/*"
