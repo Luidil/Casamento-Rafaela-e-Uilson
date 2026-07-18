@@ -1,12 +1,13 @@
-const { createClient } = require('@supabase/supabase-js');
+const { Pool } = require('pg');
 
-const supabaseUrl = 'https://zuipsuyioiwiicghhubz.supabase.co';
-const supabaseKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Inp1aXBzdXlpb2l3aWljZ2dodWJ6Iiwicm9sZSI6ImFub24iLCJpYXQiOjE3Nzg5MTA5NTcsImV4cCI6MjA5NDQ4Njk1N30.Bel4q0iqYPktkLhrkqRSEOdfTbmrfvsjK6jf2ZtS_v4';
-const supabase = createClient(supabaseUrl, supabaseKey);
+const pool = new Pool({
+    connectionString: process.env.DATABASE_URL || 'postgresql://casamento:casamento123@localhost:5433/casamento_db',
+    ssl: process.env.DATABASE_URL && process.env.DATABASE_URL.includes('neon.tech')
+        ? { rejectUnauthorized: false }
+        : false
+});
 
-const BUCKET = 'fotos-convidados';
-
-exports.handler = async (event, context) => {
+exports.handler = async (event) => {
     const headers = {
         'Access-Control-Allow-Origin': '*',
         'Access-Control-Allow-Methods': 'GET, POST, DELETE, OPTIONS',
@@ -18,14 +19,16 @@ exports.handler = async (event, context) => {
         return { statusCode: 200, headers };
     }
 
+    let client;
     try {
+        client = await pool.connect();
+
         if (event.httpMethod === 'DELETE') {
             const { fileName } = JSON.parse(event.body);
             if (!fileName) {
                 return { statusCode: 400, headers, body: JSON.stringify({ success: false, message: 'Nome do arquivo inválido' }) };
             }
-            const { error } = await supabase.storage.from(BUCKET).remove([fileName]);
-            if (error) throw new Error(error.message);
+            await client.query('DELETE FROM fotos WHERE nome = $1', [fileName]);
             return { statusCode: 200, headers, body: JSON.stringify({ success: true }) };
         }
 
@@ -40,58 +43,66 @@ exports.handler = async (event, context) => {
                 };
             }
 
-            const buffer = Buffer.from(fileData, 'base64');
             const uniqueName = `${Date.now()}-${fileName.replace(/[^a-zA-Z0-9._-]/g, '_')}`;
 
-            const { error } = await supabase.storage
-                .from(BUCKET)
-                .upload(uniqueName, buffer, {
-                    contentType: fileType,
-                    upsert: false
-                });
+            await client.query(
+                'INSERT INTO fotos (nome, tipo, dados) VALUES ($1, $2, $3)',
+                [uniqueName, fileType, fileData]
+            );
 
-            if (error) {
-                console.error('Erro no upload:', error);
-                return {
-                    statusCode: 500,
-                    headers,
-                    body: JSON.stringify({ success: false, message: error.message })
-                };
-            }
-
-            const { data: urlData } = supabase.storage
-                .from(BUCKET)
-                .getPublicUrl(uniqueName);
+            // Retorna URL que aponta pra própria function pra servir a imagem
+            const baseUrl = event.headers.host
+                ? `${event.headers['x-forwarded-proto'] || 'http'}://${event.headers.host}`
+                : '';
+            const url = `${baseUrl}/.netlify/functions/upload?file=${encodeURIComponent(uniqueName)}`;
 
             return {
                 statusCode: 200,
                 headers,
-                body: JSON.stringify({ success: true, url: urlData.publicUrl, name: uniqueName })
+                body: JSON.stringify({ success: true, url, name: uniqueName })
             };
         }
 
         if (event.httpMethod === 'GET') {
-            const { data, error } = await supabase.storage
-                .from(BUCKET)
-                .list('', { limit: 100, sortBy: { column: 'created_at', order: 'desc' } });
+            // Se tem query param "file", serve a imagem
+            const params = event.queryStringParameters || {};
+            if (params.file) {
+                const result = await client.query(
+                    'SELECT dados, tipo FROM fotos WHERE nome = $1',
+                    [params.file]
+                );
 
-            if (error) {
+                if (result.rows.length === 0) {
+                    return { statusCode: 404, headers, body: JSON.stringify({ success: false, message: 'Arquivo não encontrado' }) };
+                }
+
+                const { dados, tipo } = result.rows[0];
                 return {
-                    statusCode: 500,
-                    headers,
-                    body: JSON.stringify({ success: false, message: error.message })
+                    statusCode: 200,
+                    headers: {
+                        'Content-Type': tipo,
+                        'Cache-Control': 'public, max-age=31536000'
+                    },
+                    body: dados,
+                    isBase64Encoded: true
                 };
             }
 
-            const files = (data || []).filter(f => f.name !== '.emptyFolderPlaceholder').map(file => {
-                const { data: urlData } = supabase.storage.from(BUCKET).getPublicUrl(file.name);
-                return {
-                    id: file.id,
-                    name: file.name,
-                    url: urlData.publicUrl,
-                    type: file.name.match(/\.(mp4|webm|mov)$/i) ? 'video' : 'image'
-                };
-            });
+            // Lista todas as fotos
+            const result = await client.query(
+                'SELECT id, nome, tipo, created_at FROM fotos ORDER BY created_at DESC LIMIT 100'
+            );
+
+            const baseUrl = event.headers.host
+                ? `${event.headers['x-forwarded-proto'] || 'http'}://${event.headers.host}`
+                : '';
+
+            const files = result.rows.map(file => ({
+                id: file.id,
+                name: file.nome,
+                url: `${baseUrl}/.netlify/functions/upload?file=${encodeURIComponent(file.nome)}`,
+                type: file.tipo.startsWith('video') ? 'video' : 'image'
+            }));
 
             return {
                 statusCode: 200,
@@ -112,5 +123,7 @@ exports.handler = async (event, context) => {
             headers,
             body: JSON.stringify({ success: false, message: error.message })
         };
+    } finally {
+        if (client) client.release();
     }
 };
