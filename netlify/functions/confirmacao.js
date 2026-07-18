@@ -2,7 +2,10 @@ const { Pool } = require('pg');
 const nodemailer = require('nodemailer');
 
 const pool = new Pool({
-    connectionString: process.env.DATABASE_URL || 'postgresql://casamento:casamento123@localhost:5433/casamento_db'
+    connectionString: process.env.DATABASE_URL || 'postgresql://casamento:casamento123@localhost:5433/casamento_db',
+    ssl: process.env.DATABASE_URL && process.env.DATABASE_URL.includes('neon.tech')
+        ? { rejectUnauthorized: false }
+        : false
 });
 
 async function enviarEmail(nome, email) {
