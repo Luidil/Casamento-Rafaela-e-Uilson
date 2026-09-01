@@ -398,70 +398,148 @@ function initPhotoUpload() {
         handleFiles(files);
     });
     
-    function handleFiles(files) {
+    // Limite prático de payload de uma function do Netlify (~6 MB). Ficamos abaixo
+    // disso porque headers e overhead de transporte contam para o mesmo total.
+    const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
+    const MAX_IMAGE_DIMENSION = 2200;
+
+    async function handleFiles(files) {
         if (!files || files.length === 0) return;
-        
-        const validTypes = ['image/jpeg', 'image/png', 'image/gif', 'image/webp', 'image/jpg', 'video/mp4', 'video/webm', 'video/quicktime'];
-        
-        Array.from(files).forEach(file => {
-            if (validTypes.includes(file.type) || file.type.startsWith('image/') || file.type.startsWith('video/')) {
-                uploadFile(file);
-            } else {
-                showAlert(`Arquivo "${file.name}" não é suportado. Use imagens ou vídeos.`, 'error');
+
+        const queue = Array.from(files).filter(file => {
+            if (file.type.startsWith('image/') || file.type.startsWith('video/')) return true;
+            showAlert(`Arquivo "${file.name}" não é suportado. Use imagens ou vídeos.`, 'error');
+            return false;
+        });
+
+        // Um envio por vez: o progresso fica correto e a conexão do celular não
+        // precisa dividir a banda entre vários arquivos grandes.
+        for (let i = 0; i < queue.length; i++) {
+            await uploadFile(queue[i], i + 1, queue.length);
+        }
+
+        fileInput.value = '';
+    }
+
+    // Fotos de celular costumam ter de 3 a 12 MB, acima do limite de payload da
+    // function. Redimensionar e recomprimir no navegador é o que faz o envio
+    // caber — e ainda deixa a galeria bem mais leve.
+    async function compressImage(file) {
+        if (!file.type.startsWith('image/') || file.type === 'image/gif') return file;
+        if (typeof createImageBitmap !== 'function' || typeof HTMLCanvasElement === 'undefined') return file;
+
+        let bitmap;
+        try {
+            // 'from-image' respeita a orientação EXIF, senão fotos de celular
+            // chegam giradas.
+            bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' })
+                .catch(() => createImageBitmap(file));
+
+            const scale = Math.min(1, MAX_IMAGE_DIMENSION / Math.max(bitmap.width, bitmap.height));
+            const canvas = document.createElement('canvas');
+            canvas.width = Math.max(1, Math.round(bitmap.width * scale));
+            canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+            canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
+
+            for (const quality of [0.82, 0.7, 0.55]) {
+                const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
+                if (!blob) break;
+                if (blob.size <= MAX_UPLOAD_BYTES) {
+                    return blob.size < file.size ? blob : file;
+                }
             }
+        } catch (error) {
+            console.warn('Não foi possível otimizar a imagem, enviando original:', error);
+        } finally {
+            if (bitmap && bitmap.close) bitmap.close();
+        }
+
+        return file;
+    }
+
+    // XHR em vez de fetch para ter progresso real de upload.
+    function sendFile(blob, fileName, fileType, onProgress) {
+        return new Promise((resolve, reject) => {
+            const xhr = new XMLHttpRequest();
+            xhr.open('POST', `${API_BASE}/.netlify/functions/upload`);
+            xhr.timeout = 120000;
+            xhr.setRequestHeader('Content-Type', fileType || 'application/octet-stream');
+            // Headers HTTP só aceitam ASCII, então nomes com acento vão codificados.
+            xhr.setRequestHeader('X-File-Name', encodeURIComponent(fileName));
+
+            xhr.upload.onprogress = (event) => {
+                if (event.lengthComputable) onProgress(event.loaded / event.total);
+            };
+
+            xhr.onload = () => {
+                let payload = null;
+                try {
+                    payload = JSON.parse(xhr.responseText);
+                } catch (error) {
+                    // Erros de plataforma (413, 502, timeout do edge) respondem HTML.
+                }
+
+                if (xhr.status >= 200 && xhr.status < 300 && payload && payload.success) {
+                    resolve(payload);
+                } else if (xhr.status === 413) {
+                    reject(new Error('o arquivo passou do limite de 5 MB aceito pelo servidor'));
+                } else {
+                    reject(new Error((payload && payload.message) || `o servidor respondeu ${xhr.status}`));
+                }
+            };
+
+            xhr.onerror = () => reject(new Error('falha de conexão durante o envio'));
+            xhr.ontimeout = () => reject(new Error('o envio demorou demais, tente novamente'));
+
+            xhr.send(blob);
         });
     }
-    
-    async function uploadFile(file) {
-        // Mostra progresso
+
+    async function uploadFile(file, index, total) {
+        const label = total > 1 ? `(${index}/${total}) ` : '';
+
         uploadProgress.style.display = 'block';
         progressFill.style.width = '0%';
-        progressText.textContent = `Enviando ${file.name}...`;
-        
+        progressText.textContent = `${label}Preparando ${file.name}...`;
+
         try {
-            // Converter arquivo para base64
-            const base64 = await new Promise((resolve, reject) => {
-                const reader = new FileReader();
-                reader.onload = () => resolve(reader.result.split(',')[1]);
-                reader.onerror = reject;
-                reader.readAsDataURL(file);
-            });
+            const payload = await compressImage(file);
+            const payloadType = payload.type || file.type;
 
-            progressFill.style.width = '50%';
-
-            const response = await fetch(`${API_BASE}/.netlify/functions/upload`, {
-                method: 'POST',
-                headers: { 'Content-Type': 'application/json' },
-                body: JSON.stringify({
-                    fileName: file.name,
-                    fileData: base64,
-                    fileType: file.type
-                })
-            });
-            
-            const result = await response.json();
-            
-            if (result.success) {
-                const fileId = Date.now();
-                
-                appState.uploadedFiles.push({
-                    id: fileId,
-                    name: file.name,
-                    url: result.url,
-                    type: file.type.startsWith('image') ? 'image' : 'video'
-                });
-                
-                renderFiles();
-                saveFilesToStorage();
-                
-                progressFill.style.width = '100%';
-                setTimeout(() => {
-                    uploadProgress.style.display = 'none';
-                    showAlert(`${file.name} enviado com sucesso!`, 'success');
-                }, 500);
-            } else {
-                throw new Error(result.message || 'Erro ao enviar');
+            if (payload.size > MAX_UPLOAD_BYTES) {
+                const size = (payload.size / 1024 / 1024).toFixed(1);
+                throw new Error(payloadType.startsWith('video/')
+                    ? `vídeos são limitados a 5 MB e este tem ${size} MB`
+                    : `o arquivo tem ${size} MB e o limite é 5 MB`);
             }
+
+            // Se a imagem foi reconvertida para JPEG, a extensão acompanha.
+            const fileName = payloadType === 'image/jpeg' && !/\.jpe?g$/i.test(file.name)
+                ? `${file.name.replace(/\.[^.]+$/, '')}.jpg`
+                : file.name;
+
+            const result = await sendFile(payload, fileName, payloadType, (ratio) => {
+                const percent = Math.round(ratio * 100);
+                progressFill.style.width = `${Math.max(5, Math.round(ratio * 95))}%`;
+                progressText.textContent = `${label}Enviando ${file.name}... ${percent}%`;
+            });
+
+            appState.uploadedFiles.unshift({
+                id: result.name,
+                name: result.name,
+                url: result.url,
+                type: payloadType.startsWith('video') ? 'video' : 'image'
+            });
+
+            renderFiles();
+            saveFilesToStorage();
+
+            progressFill.style.width = '100%';
+            progressText.textContent = `${label}${file.name} enviado!`;
+            setTimeout(() => {
+                uploadProgress.style.display = 'none';
+            }, 600);
+            showAlert(`${file.name} enviado com sucesso!`, 'success');
         } catch (error) {
             uploadProgress.style.display = 'none';
             showAlert(`Erro ao enviar ${file.name}: ${error.message}`, 'error');
