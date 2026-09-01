@@ -3,8 +3,8 @@
  * Funcionalidades: RSVP Form, Upload de Fotos, Navegação
  */
 
-// Base URL para as functions - detecta se é dev local ou produção
-const API_BASE = window.location.port === '8888' ? 'http://localhost:9999' : '';
+// Usa o mesmo domínio da página em produção e no Netlify Dev.
+const API_BASE = '';
 
 document.addEventListener('DOMContentLoaded', () => {
     // Inicializa todas as funcionalidades
@@ -402,12 +402,33 @@ function initPhotoUpload() {
     // disso porque headers e overhead de transporte contam para o mesmo total.
     const MAX_UPLOAD_BYTES = 5 * 1024 * 1024;
     const MAX_IMAGE_DIMENSION = 2200;
+    const FILE_TYPES_BY_EXTENSION = {
+        jpg: 'image/jpeg',
+        jpeg: 'image/jpeg',
+        png: 'image/png',
+        gif: 'image/gif',
+        webp: 'image/webp',
+        avif: 'image/avif',
+        heic: 'image/heic',
+        heif: 'image/heif',
+        mp4: 'video/mp4',
+        webm: 'video/webm',
+        mov: 'video/quicktime',
+        '3gp': 'video/3gpp'
+    };
+
+    function getFileType(file) {
+        if (file.type) return file.type.toLowerCase();
+        const extension = file.name.split('.').pop().toLowerCase();
+        return FILE_TYPES_BY_EXTENSION[extension] || '';
+    }
 
     async function handleFiles(files) {
         if (!files || files.length === 0) return;
 
         const queue = Array.from(files).filter(file => {
-            if (file.type.startsWith('image/') || file.type.startsWith('video/')) return true;
+            const fileType = getFileType(file);
+            if (fileType.startsWith('image/') || fileType.startsWith('video/')) return true;
             showAlert(`Arquivo "${file.name}" não é suportado. Use imagens ou vídeos.`, 'error');
             return false;
         });
@@ -424,24 +445,42 @@ function initPhotoUpload() {
     // Fotos de celular costumam ter de 3 a 12 MB, acima do limite de payload da
     // function. Redimensionar e recomprimir no navegador é o que faz o envio
     // caber — e ainda deixa a galeria bem mais leve.
-    async function compressImage(file) {
-        if (!file.type.startsWith('image/') || file.type === 'image/gif') return file;
-        if (typeof createImageBitmap !== 'function' || typeof HTMLCanvasElement === 'undefined') return file;
+    async function compressImage(file, fileType) {
+        if (!fileType.startsWith('image/') || fileType === 'image/gif') return file;
+        if (typeof HTMLCanvasElement === 'undefined') return file;
 
         let bitmap;
+        let imageUrl;
         try {
-            // 'from-image' respeita a orientação EXIF, senão fotos de celular
-            // chegam giradas.
-            bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' })
-                .catch(() => createImageBitmap(file));
+            if (typeof createImageBitmap === 'function') {
+                // 'from-image' respeita a orientação EXIF, senão fotos de celular
+                // chegam giradas.
+                bitmap = await createImageBitmap(file, { imageOrientation: 'from-image' })
+                    .catch(() => createImageBitmap(file))
+                    .catch(() => null);
+            }
 
-            const scale = Math.min(1, MAX_IMAGE_DIMENSION / Math.max(bitmap.width, bitmap.height));
+            // Safari e navegadores mais antigos podem não implementar
+            // createImageBitmap, mas ainda conseguem decodificar a foto em <img>.
+            if (!bitmap) {
+                imageUrl = URL.createObjectURL(file);
+                bitmap = await new Promise((resolve, reject) => {
+                    const image = new Image();
+                    image.onload = () => resolve(image);
+                    image.onerror = () => reject(new Error('formato de imagem não pôde ser lido'));
+                    image.src = imageUrl;
+                });
+            }
+
+            const width = bitmap.width || bitmap.naturalWidth;
+            const height = bitmap.height || bitmap.naturalHeight;
+            const scale = Math.min(1, MAX_IMAGE_DIMENSION / Math.max(width, height));
             const canvas = document.createElement('canvas');
-            canvas.width = Math.max(1, Math.round(bitmap.width * scale));
-            canvas.height = Math.max(1, Math.round(bitmap.height * scale));
+            canvas.width = Math.max(1, Math.round(width * scale));
+            canvas.height = Math.max(1, Math.round(height * scale));
             canvas.getContext('2d').drawImage(bitmap, 0, 0, canvas.width, canvas.height);
 
-            for (const quality of [0.82, 0.7, 0.55]) {
+            for (const quality of [0.82, 0.7, 0.55, 0.42]) {
                 const blob = await new Promise(resolve => canvas.toBlob(resolve, 'image/jpeg', quality));
                 if (!blob) break;
                 if (blob.size <= MAX_UPLOAD_BYTES) {
@@ -452,6 +491,7 @@ function initPhotoUpload() {
             console.warn('Não foi possível otimizar a imagem, enviando original:', error);
         } finally {
             if (bitmap && bitmap.close) bitmap.close();
+            if (imageUrl) URL.revokeObjectURL(imageUrl);
         }
 
         return file;
@@ -466,6 +506,7 @@ function initPhotoUpload() {
             xhr.setRequestHeader('Content-Type', fileType || 'application/octet-stream');
             // Headers HTTP só aceitam ASCII, então nomes com acento vão codificados.
             xhr.setRequestHeader('X-File-Name', encodeURIComponent(fileName));
+            xhr.setRequestHeader('X-File-Type', fileType || 'application/octet-stream');
 
             xhr.upload.onprogress = (event) => {
                 if (event.lengthComputable) onProgress(event.loaded / event.total);
@@ -503,8 +544,9 @@ function initPhotoUpload() {
         progressText.textContent = `${label}Preparando ${file.name}...`;
 
         try {
-            const payload = await compressImage(file);
-            const payloadType = payload.type || file.type;
+            const originalType = getFileType(file);
+            const payload = await compressImage(file, originalType);
+            const payloadType = payload.type || originalType;
 
             if (payload.size > MAX_UPLOAD_BYTES) {
                 const size = (payload.size / 1024 / 1024).toFixed(1);
